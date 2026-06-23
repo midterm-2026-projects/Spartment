@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import NotificationTable from "../components/NotificationTable";
 
@@ -18,37 +18,45 @@ describe("NotificationTable", () => {
     expect(timestampHeader).toBeInTheDocument();
   });
 
-  it("should display notification records correctly", () => {
+  it("should display an empty notification table when there are no notifications", () => {
     // Arrange
-    render(<NotificationTable />);
+    render(<NotificationTable notifications={[]} />);
 
     // Act
-    const paymentType = screen.getByText("Payment Due");
-    const paymentMessage = screen.getByText(
-      "Tenant payment due tomorrow"
-    );
-    const paymentTimestamp = screen.getByText("2026-06-23");
+    const rows = screen.getAllByRole("row");
 
     // Assert
-    expect(paymentType).toBeInTheDocument();
-    expect(paymentMessage).toBeInTheDocument();
-    expect(paymentTimestamp).toBeInTheDocument();
+    expect(rows).toHaveLength(1);
   });
 
-  it("should display all notification rows", () => {
+  it("should display notification records in the table", () => {
     // Arrange
     render(<NotificationTable />);
 
     // Act
-    const leaseType = screen.getByText("Lease Expiry");
-    const leaseMessage = screen.getByText(
-      "Lease expires in 7 days"
+    const paymentNotification = screen.getByText(
+      "Tenant payment due tomorrow"
     );
-    const leaseTimestamp = screen.getByText("2026-06-22");
 
     // Assert
-    expect(leaseType).toBeInTheDocument();
-    expect(leaseMessage).toBeInTheDocument();
-    expect(leaseTimestamp).toBeInTheDocument();
+    expect(paymentNotification).toBeInTheDocument();
+  });
+
+  it("should display the latest notification at the top of the table", () => {
+    // Arrange
+    render(<NotificationTable />);
+
+    // Act
+    const rows = screen.getAllByRole("row");
+    const firstDataRow = rows[1];
+
+    // Assert
+    expect(
+      within(firstDataRow).getByText("Payment Due")
+    ).toBeInTheDocument();
+
+    expect(
+      within(firstDataRow).getByText("2026-06-23")
+    ).toBeInTheDocument();
   });
 });

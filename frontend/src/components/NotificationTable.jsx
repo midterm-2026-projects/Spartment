@@ -1,5 +1,5 @@
-export default function NotificationTable() {
-  const notifications = [
+export default function NotificationTable({
+  notifications = [
     {
       type: "Payment Due",
       message: "Tenant payment due tomorrow",
@@ -10,8 +10,8 @@ export default function NotificationTable() {
       message: "Lease expires in 7 days",
       timestamp: "2026-06-22",
     },
-  ];
-
+  ],
+}) {
   return (
     <table border="1">
       <thead>
