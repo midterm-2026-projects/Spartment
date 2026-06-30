@@ -1,10 +1,10 @@
 # Objective #1: Automated Tenancy, Billing, and Guest Management System
 
-*Owner (Member Name):* John Aron M. Caay
+**Owner (Member Name):** John Aron M. Caay
 
 ## Objective Title
 
-Automated Tenancy, Billing, and Guest Management System
+**Automated Tenancy, Billing, and Guest Management System**
 
 ## Objective Description
 
@@ -12,17 +12,209 @@ This objective focuses on implementing automated notifications and AI-driven rec
 
 ---
 
-# 5-Week Task Breakdown
+# 6-Week Task Breakdown
 
-| Week   | Day   | Task Description                                 | Sub-Tasks (breakdown)                                                                                           | Deliverable(s)                                                                                    | Test Suite / PR Acceptance Criteria                                                                                                                                                                                                                                                                                                                     |
-| ------ | ----- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Week 1 | Day 1 | Create Landing Page                              | • Text fields<br>• Buttons<br>• Header                                                                          | • Email and Password text field<br>• Sign-in and Continue as a guess button<br>• Header Title     | • It should allow the user to enter an email.<br>• It should call onSubmit when button is clicked.<br>• It should render the header title.                                                                                                                                                                                                              |
-| Week 2 | Day 1 | Implement Authentication                         | • Implement authentication<br>• Set up role-based access                                                        | • Authentication Module<br>• Role-Based Access Control                                            | • It should authenticate registered users using valid credentials<br>• It should redirect Admin, and Tenant to their respective interfaces after login                                                                                                                                                                                                  |
-| Week 2 | Day 2 | Implement Room & Tenant Management               | • Create room management<br>• Create tenant management                                                          | • Room Management Module<br>• Tenant Management Module                                            | • It should have an Add Room button that allows administrators to create new room records and display all available rooms successfully<br>• It should have an Add Tenant button that allows administrators to create new tenant records and display all registered tenants successfully                                                                 |
-| Week 3 | Day1  | Tenant Portal                                    | • Display tenant information<br>• Show assigned room<br>• Enable profile updates                                | • Tenant Information View<br>• Assigned Room View<br>• Profile Update Feature                     | • It should display the logged-in tenant's personal information, including name, contact number, and email address correctly<br>• It should display the tenant's assigned room number, room type, and occupancy status correctly<br>• It should allow the tenant to update editable profile information and save the changes successfully               |
-| Week 3 | Day 2 | Guest Access Module with Database Integration    | • Create guest Ui<br>• Create inquiry form and connect it to database<br>• Save guest inquiries                 | • Guest UI<br>• Inquiry Database Connection<br>• Guest Inquiry Records                            | • It should display available rooms, rates, and room descriptions correctly on the guest interface<br>• It should allow guests to submit inquiries through the inquiry form and store the submitted data in the database successfully<br>• It should retrieve and display saved guest inquiry records accurately in the administrator dashboard         |
-| Week 4 | Day 1 | Implement Bill Display with Database Integration | • Retrieve billing records from database<br>• Display tenant bills<br>• Display outstanding balances            | • Billing Data Integration<br>• Bill Display Interface<br>• Outstanding Balance View              | • It should retrieve billing records associated with the logged-in tenant from the database successfully<br>• It should display billing details including billing period, due date, amount due, and payment status accurately<br>• It should calculate and display the tenant's outstanding balance based on unpaid billing records correctly           |
-| Week 4 | Day 2 | Implement Billing Management                     | • Generate bills<br>• Track balances<br>• Store billing records                                                 | • Bill Generation Module<br>• Balance Tracking Module<br>• Billing Records                        | • It should generate billing records for assigned tenants based on their room rates successfully<br>• It should calculate and track tenant balances accurately after bill generation<br>• It should store billing records including billing period, due date, amount due, and payment status in the database successfully                               |
-| Week 5 | Day 1 | Implement Payment Recording                      | • Record payments<br>• Update balances<br>• Maintain payment history                                            | • Payment Recording Module<br>• Balance Update Module<br>• Payment History Records                | • It should allow administrators to record received tenant payments successfully<br>• It should automatically update the tenant's outstanding balance after a payment is recorded<br>• It should store payment details including payment date, amount paid, and payment status in the payment history records successfully                              |
-| Week 5 | Day 2 | Integrate Management Modules                     | • Connect room and tenant modules<br>• Connect billing and payment records<br>• Synchronize data across modules | • Room & Tenant Integration<br>• Billing & Payment Record Integration<br>• Synchronized Data Flow | • It should automatically update room occupancy information when a tenant is assigned or removed from a room<br>• It should automatically update billing records and tenant balances when a payment is recorded by the administrator<br>• It should synchronize room, tenant, billing, payment, and inquiry data correctly across all connected modules |
-| Week 6 | Day 1 | Finalize Dashboard & Testing                     | • Display dashboard summaries<br>• Improve interface                                                            | • Dashboard Summary View<br>• Improved User Interface                                             | • It should display accurate occupancy, tenant, billing, and payment summaries based on the latest system records<br>• It should provide a responsive, user-friendly, and fully functional interface across all system modules                                                                                                                          |
+## Week 1 - Day 1
+### Task Description
+**Create Landing Page**
+
+#### Sub-Tasks
+- Text fields
+- Buttons
+- Header
+
+#### Deliverables
+- Email and Password text field
+- Sign-in and Continue as a Guest button
+- Header Title
+
+#### Test Suite / PR Acceptance Criteria
+- It should allow the user to enter an email.
+- It should call `onSubmit` when the button is clicked.
+- It should render the header title.
+
+---
+
+## Week 2 - Day 1
+### Task Description
+**Creating Customer Service Widget**
+
+#### Sub-Tasks
+- Customer Service Button Widget
+- Customer Service Window
+- Option Buttons
+
+#### Deliverables
+- Customer Service Widget
+- Customer Service Window
+- Option Buttons
+
+#### Test Suite / PR Acceptance Criteria
+- It should render the Customer Service widget successfully.
+- It should display the Customer Service window when the widget is clicked.
+- It should display the Inquiry, Maintenance, and Other option buttons successfully.
+
+---
+
+## Week 2 - Day 2
+### Task Description
+**Customer Service Option Button Forms**
+
+#### Sub-Tasks
+- Text fields for Inquiries
+- Text fields for Maintenance
+- Text fields for Other
+
+#### Deliverables
+- Inquiry Form
+- Maintenance Form
+- Other Form
+
+#### Test Suite / PR Acceptance Criteria
+- It should render the Inquiry form with all required input fields.
+- It should render the Maintenance form with all required input fields.
+- It should render the Other form with all required input fields.
+
+---
+
+## Week 3 - Day 1
+### Task Description
+**Tenant Portal**
+
+#### Sub-Tasks
+- Display tenant information
+- Show assigned room
+- Enable profile updates
+
+#### Deliverables
+- Tenant Information View
+- Assigned Room View
+- Profile Update Feature
+
+#### Test Suite / PR Acceptance Criteria
+- It should display the logged-in tenant's personal information, including name, contact number, and email address correctly.
+- It should display the tenant's assigned room number, room type, and occupancy status correctly.
+- It should allow the tenant to update editable profile information and save the changes successfully.
+
+---
+
+## Week 3 - Day 2
+### Task Description
+**Guest Access Module with Database Integration**
+
+#### Sub-Tasks
+- Create Guest UI
+- Create inquiry form and connect it to the database
+- Save guest inquiries
+
+#### Deliverables
+- Guest UI
+- Inquiry Database Connection
+- Guest Inquiry Records
+
+#### Test Suite / PR Acceptance Criteria
+- It should display available rooms, rates, and room descriptions correctly on the guest interface.
+- It should allow guests to submit inquiries through the inquiry form and store the submitted data in the database successfully.
+- It should retrieve and display saved guest inquiry records accurately in the administrator dashboard.
+
+---
+
+## Week 4 - Day 1
+### Task Description
+**Implement Bill Display with Database Integration**
+
+#### Sub-Tasks
+- Retrieve billing records from the database
+- Display tenant bills
+- Display outstanding balances
+
+#### Deliverables
+- Billing Data Integration
+- Bill Display Interface
+- Outstanding Balance View
+
+#### Test Suite / PR Acceptance Criteria
+- It should retrieve billing records associated with the logged-in tenant from the database successfully.
+- It should display billing details including billing period, due date, amount due, and payment status accurately.
+- It should calculate and display the tenant's outstanding balance based on unpaid billing records correctly.
+
+---
+
+## Week 4 - Day 2
+### Task Description
+**Implement Billing Management**
+
+#### Sub-Tasks
+- Generate bills
+- Track balances
+- Store billing records
+
+#### Deliverables
+- Bill Generation Module
+- Balance Tracking Module
+- Billing Records
+
+#### Test Suite / PR Acceptance Criteria
+- It should generate billing records for assigned tenants based on their room rates successfully.
+- It should calculate and track tenant balances accurately after bill generation.
+- It should store billing records including billing period, due date, amount due, and payment status in the database successfully.
+
+---
+
+## Week 5 - Day 1
+### Task Description
+**Implement Payment Recording**
+
+#### Sub-Tasks
+- Record payments
+- Update balances
+- Maintain payment history
+
+#### Deliverables
+- Payment Recording Module
+- Balance Update Module
+- Payment History Records
+
+#### Test Suite / PR Acceptance Criteria
+- It should allow administrators to record received tenant payments successfully.
+- It should automatically update the tenant's outstanding balance after a payment is recorded.
+- It should store payment details including payment date, amount paid, and payment status in the payment history records successfully.
+
+---
+
+## Week 5 - Day 2
+### Task Description
+**Integrate Management Modules**
+
+#### Sub-Tasks
+- Connect room and tenant modules
+- Connect billing and payment records
+- Synchronize data across modules
+
+#### Deliverables
+- Room & Tenant Integration
+- Billing & Payment Record Integration
+- Synchronized Data Flow
+
+#### Test Suite / PR Acceptance Criteria
+- It should automatically update room occupancy information when a tenant is assigned or removed from a room.
+- It should automatically update billing records and tenant balances when a payment is recorded by the administrator.
+- It should synchronize room, tenant, billing, payment, and inquiry data correctly across all connected modules.
+
+---
+
+## Week 6 - Day 1
+### Task Description
+**Finalize Dashboard & Testing**
+
+#### Sub-Tasks
+- Display dashboard summaries
+- Improve interface
+
+#### Deliverables
+- Dashboard Summary View
+- Improved User Interface
+
+#### Test Suite / PR Acceptance Criteria
+- It should display accurate occupancy, tenant, billing, and payment summaries based on the latest system records.
+- It should provide a responsive, user-friendly, and fully functional interface across all system modules.
