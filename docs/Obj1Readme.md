@@ -78,23 +78,37 @@ This objective focuses on implementing automated notifications and AI-driven rec
 ---
 
 ## Week 3 - Day 1
+
 ### Task Description
-**Tenant Portal**
+
+**Tenant Portal & Implement Tenant Portal Backend**
 
 #### Sub-Tasks
-- Display tenant information
-- Show assigned room
-- Enable profile updates
+
+- Create Tenant Header/Sub-Header
+- Create My Room, Monthly Rent, and Next Due
+- Display Payment History by Month
+- Implement Tenant Model
+- Implement Tenant Service
+- Implement Tenant Service Unit Tests
 
 #### Deliverables
-- Tenant Information View
-- Assigned Room View
-- Profile Update Feature
+
+- Tenant Header/Sub-Header
+- My Room, Monthly Rent, and Next Due Cards
+- Payment History
+- Tenant Model
+- Tenant Service
+- Tenant Service Test
 
 #### Test Suite / PR Acceptance Criteria
-- It should display the logged-in tenant's personal information, including name, contact number, and email address correctly.
-- It should display the tenant's assigned room number, room type, and occupancy status correctly.
-- It should allow the tenant to update editable profile information and save the changes successfully.
+
+- It should render the Tenant Header and Sub-Header correctly.
+- It should display the tenant's assigned room number, monthly rent amount, and next payment due date correctly.
+- It should display the tenant's payment history grouped by month correctly.
+- It should retrieve tenant information from the data source successfully.
+- It should return the tenant's room number, monthly rent, next due date, and payment history correctly.
+- It should pass all Tenant Service Vitest unit tests successfully.
 
 ---
 
