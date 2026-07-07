@@ -27,7 +27,7 @@
 
 ## Week 2 - Day 1
 ### Task Description
-**Implement Revenue Dashboard**
+**Implement Rent billing**
 
 #### Sub-Tasks
 - Create Rent Billing button
@@ -45,7 +45,7 @@
 
 ## Week 2 - Day 2
 ### Task Description
-**Implement Payment Monitoring**
+**Implement Utility Billing**
 
 #### Sub-Tasks
 - Create Utility Billing button
