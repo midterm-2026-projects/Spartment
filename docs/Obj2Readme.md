@@ -62,20 +62,40 @@
 ---
 
 ## Week 3 - Day 1
+
 ### Task Description
-**Implement Income Comparison**
+
+**Tenant List & Implement Tenant Management Backend**
 
 #### Sub-Tasks
-- Create Income Comparison interface
-- Develop Income Comparison functions
+
+- Create a Tenant Header/Sub-Header for the Tenant List on the admin side
+- Create Tenant Cards containing the tenant's name, email, room number, and rent price
+- Create Add Tenant Button
+- Create Add Tenant Module
+- Implement Tenant List Model
+- Implement Tenant List Service
+- Implement Tenant List Unit Tests
 
 #### Deliverables
-- Income Comparison Interface
-- Income Comparison Functions
+
+- Tenant List Header and Sub-Header
+- Tenant Cards
+- Add Tenant Button
+- Add Tenant Module
+- Tenant List Model
+- Tenant List Service
+- Tenant List Service Test
 
 #### Test Suite / PR Acceptance Criteria
-- It should display projected income, actual income, and income variance correctly in the income comparison interface.
-- It should calculate income variance accurately by comparing projected rental income against actual collected revenue.
+
+- It should render the Tenant List Header and Sub-Header correctly.
+- It should display each Tenant Card with the tenant's name, email, room number, and rent price correctly.
+- It should render the Add Tenant button correctly.
+- It should display the Add Tenant module when the Add Tenant button is clicked.
+- It should retrieve all tenant records successfully.
+- It should return tenant name, email, room number, and rent amount correctly.
+- It should pass all Tenant List Service Vitest unit tests successfully.
 
 ---
 

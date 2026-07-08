@@ -59,23 +59,38 @@
 - It should render the Analytics & Report header and sub-header successfully.
 - It should display the Forecast and Actual Revenue cards successfully.
 
----
-
 ## Week 3 - Day 1
+
 ### Task Description
-**Implement Maintenance Notification Functions**
+
+**Implement Maintenance Notification Functions & Implement Room Management Backend**
 
 #### Sub-Tasks
-- Develop maintenance request alerts
-- Develop maintenance status alerts
+
+- Create Room List Header/Sub-Header
+- Create Room Cards containing room number, room status, tenant name, monthly rent, and Edit button
+- Create Room Edit Module
+- Implement Room Model
+- Implement Room Service
+- Implement Room Service Unit Tests
 
 #### Deliverables
-- Maintenance Request Alert Functions
-- Maintenance Status Alert Functions
+
+- Room List Header/Sub-Header
+- Room Cards
+- Room Edit Module
+- Room Model
+- Room Service
+- Room Service Test
 
 #### Test Suite / PR Acceptance Criteria
-- It should generate maintenance request alerts for administrators when a tenant submits a maintenance request successfully.
-- It should generate maintenance status alerts for tenants when the status of their maintenance request is updated successfully.
+
+- It should render the Room List Header and Sub-Header correctly.
+- It should display each Room Card with the room number, room status, tenant name, monthly rent, and Edit button correctly.
+- It should display the Room Edit module when the Edit button is clicked.
+- It should retrieve room records successfully.
+- It should return room number, room status, tenant name, and monthly rent correctly.
+- It should pass all Room Service Vitest unit tests successfully.
 
 ---
 
