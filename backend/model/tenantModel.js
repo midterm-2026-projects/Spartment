@@ -65,3 +65,17 @@ export async function getTenantInformation(id) {
 
   return tenant;
 }
+
+export async function searchTenantByName(name) {
+  const tenant = tenantData.find(
+    (tenant) =>
+      tenant.tenant.name.toLowerCase() ===
+      name.toLowerCase()
+  );
+
+  if (!tenant) {
+    throw new Error("Tenant not found.");
+  }
+
+  return tenant;
+}
