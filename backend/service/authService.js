@@ -1,5 +1,4 @@
 import { getUserByEmail } from "../model/authModel.js";
-
 import { validateLoginCredentials } from "../validation/authValidation.js";
 
 export async function authenticateUser(email, password) {
@@ -9,6 +8,11 @@ export async function authenticateUser(email, password) {
 
     // Retrieve user
     const user = await getUserByEmail(email);
+
+    // Check if the user exists
+    if (!user) {
+      throw new Error("User not found.");
+    }
 
     // Validate password
     if (user.password !== password) {

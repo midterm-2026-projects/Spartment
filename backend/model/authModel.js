@@ -6,7 +6,6 @@ const users = [
     password: "admin123",
     role: "admin",
   },
-
   {
     id: 2,
     name: "Juan Dela Cruz",
@@ -17,13 +16,7 @@ const users = [
 ];
 
 export async function getUserByEmail(email) {
-  const user = users.find(
+  return users.find(
     (user) => user.email.toLowerCase() === email.toLowerCase()
   );
-
-  if (!user) {
-    throw new Error("User not found.");
-  }
-
-  return user;
 }
