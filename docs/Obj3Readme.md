@@ -95,20 +95,33 @@
 ---
 
 ## Week 3 - Day 2
+
 ### Task Description
-**Integrate Notification System with Database**
+
+**Complete Room Management Backend**
 
 #### Sub-Tasks
-- Retrieve notification records
-- Store notification history
+
+- Create Room Validation
+- Implement Search Room Service
+- Create Room Search Unit Tests
+- Create Room Validation Unit Tests
 
 #### Deliverables
-- Notification Record Integration
-- Notification History Records
+
+- Room Validation
+- Search Room Service
+- Room Search Test
+- Room Validation Test
 
 #### Test Suite / PR Acceptance Criteria
-- It should retrieve notification records, including payment, lease, room, and maintenance notifications, from the database successfully.
-- It should store notification history records, including notification type, message, timestamp, and status, correctly in the database.
+
+- It should validate room search requests successfully.
+- It should retrieve room records using the room number successfully.
+- It should retrieve room records using the room status successfully.
+- It should return an appropriate error when no matching room record exists.
+- It should pass all Room Search Vitest unit tests successfully.
+- It should pass all Room Validation Vitest unit tests successfully.
 
 ---
 
