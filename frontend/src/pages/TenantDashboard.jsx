@@ -6,13 +6,17 @@ import TenantHeader from "../components/TenantHeader";
 import TenantInfoCards from "../components/TenantInfoCards";
 import PaymentHistory from "../components/PaymentHistory";
 
+import Loading from "../components/Loading";
+import ErrorMessage from "../components/ErrorMessage";
+import EmptyState from "../components/EmptyState";
+
 export default function TenantDashboard() {
   const [tenantData, setTenantData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const loadTenantInformation = async () => {
+    async function loadTenantInformation() {
       try {
         const data = await getTenantInformation(1);
 
@@ -22,21 +26,27 @@ export default function TenantDashboard() {
       } finally {
         setLoading(false);
       }
-    };
+    }
 
     loadTenantInformation();
   }, []);
 
   if (loading) {
-    return <p>Loading tenant information...</p>;
+    return (
+      <Loading message="Loading tenant information..." />
+    );
   }
 
   if (error) {
-    return <p>Tenant information unavailable.</p>;
+    return (
+      <ErrorMessage message="Tenant information unavailable." />
+    );
   }
 
   if (!tenantData) {
-    return <p>No tenant information found.</p>;
+    return (
+      <EmptyState message="No tenant information found." />
+    );
   }
 
   return (
