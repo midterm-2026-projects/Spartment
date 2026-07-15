@@ -9,17 +9,6 @@ import {
 } from "../api/analyticsApi";
 
 
-import AnalyticsSummaryCard from "../components/AnalyticsSummaryCard";
-
-import OccupancyCard from "../components/OccupancyCard";
-
-import PaymentStatusCard from "../components/PaymentStatusCard";
-
-import RevenueTrendCard from "../components/RevenueTrendCard";
-
-import TenantAnalyticsCard from "../components/TenantAnalyticsCard";
-
-
 import Loading from "../components/Loading";
 
 import ErrorMessage from "../components/ErrorMessage";
@@ -30,164 +19,182 @@ import EmptyState from "../components/EmptyState";
 
 export default function AnalyticsDashboard() {
 
+  const [
+    analytics,
+    setAnalytics,
+  ] = useState(null);
 
-const [
-  analytics,
-  setAnalytics,
-] = useState(null);
 
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
 
 
-const [
-  loading,
-  setLoading,
-] = useState(true);
+  const [
+    error,
+    setError,
+  ] = useState("");
 
 
 
-const [
-  error,
-  setError,
-] = useState("");
+  useEffect(() => {
 
+    async function loadAnalytics() {
 
+      try {
 
-useEffect(()=>{
+        const data =
+          await getAnalytics();
 
 
-async function loadAnalytics(){
+        setAnalytics(data);
 
-try {
 
+      } catch(error) {
 
-const data =
- await getAnalytics();
+        setError(
+          error.message
+        );
 
+      } finally {
 
-setAnalytics(data);
+        setLoading(false);
 
+      }
 
+    }
 
-}catch(error){
 
+    loadAnalytics();
 
-setError(
- error.message
-);
+  }, []);
 
 
 
-}finally{
+  if (loading) {
+    return <Loading />;
+  }
 
 
-setLoading(false);
+  if (error) {
+    return (
+      <ErrorMessage
+        message={error}
+      />
+    );
+  }
 
 
-}
+  if (!analytics) {
+    return <EmptyState />;
+  }
 
 
-}
 
+  return (
 
-loadAnalytics();
+    <div>
 
+      <h1>
+        Analytics Dashboard
+      </h1>
 
-},[]);
 
+      <div>
 
+        <h2>
+          Total Revenue
+        </h2>
 
-if(loading){
+        <p>
+          ₱{analytics.totalRevenue}
+        </p>
 
-return <Loading />;
 
-}
+        <h2>
+          Active Tenants
+        </h2>
 
+        <p>
+          {analytics.totalTenants}
+        </p>
 
 
-if(error){
-
-return <ErrorMessage />;
-
-}
-
-
-
-if(!analytics){
-
-return <EmptyState />;
-
-}
-
-
-
-return (
-
-<div>
-
-
-<h1>
- Analytics Dashboard
-</h1>
-
-
-
-<AnalyticsSummaryCard
-
-title="Total Revenue"
-
-value={
- `₱${analytics.totalRevenue}`
-}
-
-subtitle="Overall Revenue"
-
-/>
-
-
-
-<TenantAnalyticsCard
-
-totalTenants={
- analytics.totalTenants
-}
-
-/>
-
-
-
-<OccupancyCard
-
-occupancyRate={
- analytics.occupancyRate
-}
-
-/>
-
-
-
-<PaymentStatusCard
-
-paymentStatus={
- analytics.paymentStatus
-}
-
-/>
-
-
-
-<RevenueTrendCard
-
-revenueTrend={
- analytics.revenueTrend
-}
-
-/>
-
-
-
-</div>
-
-);
-
+        <h2>
+          Occupancy Rate
+        </h2>
+
+        <p>
+          {analytics.occupancyRate}%
+        </p>
+
+
+        <h2>
+          Payment Status
+        </h2>
+
+        <p>
+          Paid:
+          {" "}
+          {analytics.paymentStatus.paid}
+        </p>
+
+        <p>
+          Pending:
+          {" "}
+          {analytics.paymentStatus.pending}
+        </p>
+
+        <p>
+          Overdue:
+          {" "}
+          {analytics.paymentStatus.overdue}
+        </p>
+
+
+        <h2>
+          Revenue Trend
+        </h2>
+
+        {
+          analytics.revenueTrend.map(
+            (item) => (
+              <p
+                key={item.month}
+              >
+                {item.month}
+                :
+                ₱{item.amount}
+              </p>
+            )
+          )
+        }
+
+
+        <h2>
+          Smart Recommendations
+        </h2>
+
+        {
+          analytics.recommendations.map(
+            (item, index) => (
+              <p
+                key={index}
+              >
+                {item.title}
+                :
+                {" "}
+                {item.message}
+              </p>
+            )
+          )
+        }
+
+      </div>
+
+    </div>
+
+  );
 
 }

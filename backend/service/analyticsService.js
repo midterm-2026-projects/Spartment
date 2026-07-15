@@ -1,122 +1,252 @@
 import {
-  getAnalyticsData,
-} from "../model/analyticsModel.js";
+  fetchBillingRecords,
+} from "../model/billingModel.js";
+
+import {
+  fetchRooms,
+} from "../model/roomModel.js";
+
+import {
+  fetchTenants,
+} from "../model/tenantModel.js";
 
 
 export async function fetchAnalyticsData() {
+
   try {
-    const data =
-      await getAnalyticsData();
 
 
-    if (!data) {
-      return null;
-    }
+    const billing =
+      await fetchBillingRecords();
+
+
+    const rooms =
+      await fetchRooms();
+
+
+    const tenants =
+      await fetchTenants();
+
 
 
     return {
+
       totalRevenue:
-        calculateTotalRevenue(
-          data.revenue
+        calculateRevenue(
+          billing
         ),
 
-      totalTenants:
-        calculateTotalTenants(
-          data.tenants
-        ),
 
       occupancyRate:
-        calculateOccupancyRate(
-          data.rooms
+        calculateOccupancy(
+          rooms
         ),
+
+
+      totalTenants:
+        tenants.length,
+
 
       paymentStatus:
         calculatePaymentStatus(
-          data.payments
+          billing
         ),
 
+
+      tenantGrowth:
+        calculateTenantGrowth(
+          tenants
+        ),
+
+
       revenueTrend:
-        data.revenueTrend || [],
+        generateRevenueTrend(
+          billing
+        ),
+
 
       recommendations:
-        data.recommendations || [],
+        generateRecommendations(
+          billing,
+          rooms
+        ),
+
     };
 
-  } catch (error) {
+
+  } catch(error){
+
     throw new Error(
       "Failed to retrieve analytics information."
     );
+
   }
+
 }
 
 
 
-function calculateTotalRevenue(
-  revenue = []
-) {
-  return revenue.reduce(
-    (total, item) =>
+function calculateRevenue(
+  billing
+){
+
+  return billing.reduce(
+    (total,item)=>
       total + item.amount,
     0
   );
+
 }
 
 
 
-function calculateTotalTenants(
-  tenants = []
-) {
-  return tenants.length;
-}
 
+function calculateOccupancy(
+  rooms
+){
 
-
-function calculateOccupancyRate(
-  rooms = []
-) {
-  if (rooms.length === 0) {
+  if(
+    rooms.length === 0
+  ){
     return 0;
   }
 
 
   const occupied =
     rooms.filter(
-      (room) =>
+      room =>
         room.status === "Occupied"
     ).length;
 
 
-  return (
-    (occupied / rooms.length) *
-    100
+
+  return Number(
+    (
+      occupied /
+      rooms.length *
+      100
+    ).toFixed(2)
   );
+
 }
 
 
 
+
 function calculatePaymentStatus(
-  payments = []
-) {
+  billing
+){
 
   return {
+
     paid:
-      payments.filter(
-        (payment) =>
-          payment.status === "Paid"
+      billing.filter(
+        item =>
+          item.status === "Paid"
       ).length,
 
 
     pending:
-      payments.filter(
-        (payment) =>
-          payment.status === "Pending"
+      billing.filter(
+        item =>
+          item.status === "Pending"
       ).length,
 
 
     overdue:
-      payments.filter(
-        (payment) =>
-          payment.status === "Overdue"
+      billing.filter(
+        item =>
+          item.status === "Overdue"
       ).length,
+
   };
+
+}
+
+
+
+
+function calculateTenantGrowth(
+ tenants
+){
+
+ return tenants.length;
+
+}
+
+
+
+function generateRevenueTrend(
+ billing
+){
+
+ return billing.map(
+  item=>({
+
+    month:item.month,
+
+    amount:item.amount
+
+  })
+ );
+
+}
+
+
+
+function generateRecommendations(
+ billing,
+ rooms
+){
+
+ const recommendations=[];
+
+
+ const overdue =
+ billing.filter(
+  item =>
+   item.status==="Overdue"
+ );
+
+
+ if(overdue.length>0){
+
+  recommendations.push({
+
+   title:
+   "Follow up on late payments",
+
+   message:
+   `${overdue.length} overdue payments detected.`
+
+  });
+
+ }
+
+
+
+ const vacant =
+ rooms.filter(
+  room =>
+   room.status==="Vacant"
+ );
+
+
+ if(vacant.length>0){
+
+ recommendations.push({
+
+  title:
+  "Vacant rooms detected",
+
+  message:
+  `${vacant.length} vacant rooms available.`
+
+ });
+
+ }
+
+
+ return recommendations;
+
 }

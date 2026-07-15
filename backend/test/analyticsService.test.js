@@ -6,183 +6,232 @@ import {
   vi,
 } from "vitest";
 
-
 vi.mock(
-  "../model/analyticsModel.js",
+  "../model/billingModel.js",
   () => ({
-    getAnalyticsData:
-      vi.fn(),
+    fetchBillingRecords: vi.fn(),
   })
 );
 
+vi.mock(
+  "../model/roomModel.js",
+  () => ({
+    fetchRooms: vi.fn(),
+  })
+);
+
+vi.mock(
+  "../model/tenantModel.js",
+  () => ({
+    fetchTenants: vi.fn(),
+  })
+);
 
 import {
-  getAnalyticsData,
-} from "../model/analyticsModel.js";
+  fetchBillingRecords,
+} from "../model/billingModel.js";
 
+import {
+  fetchRooms,
+} from "../model/roomModel.js";
+
+import {
+  fetchTenants,
+} from "../model/tenantModel.js";
 
 import {
   fetchAnalyticsData,
 } from "../service/analyticsService.js";
 
 
-describe(
-  "Analytics Service",
-  () => {
+describe("Analytics Service", () => {
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
+  it("should calculate analytics successfully", async () => {
+
+    fetchBillingRecords.mockResolvedValue([
+      {
+        id: 1,
+        amount: 5000,
+        status: "Paid",
+        month: "January",
+      },
+      {
+        id: 2,
+        amount: 3000,
+        status: "Pending",
+        month: "February",
+      },
+      {
+        id: 3,
+        amount: 2000,
+        status: "Overdue",
+        month: "March",
+      },
+    ]);
+
+    fetchRooms.mockResolvedValue([
+      {
+        id: 101,
+        status: "Occupied",
+      },
+      {
+        id: 102,
+        status: "Occupied",
+      },
+      {
+        id: 103,
+        status: "Vacant",
+      },
+    ]);
+
+    fetchTenants.mockResolvedValue([
+      {
+        id: 1,
+        name: "Maria Santos",
+      },
+      {
+        id: 2,
+        name: "Juan Cruz",
+      },
+    ]);
 
 
-const mockAnalytics = {
-
-  revenue: [
-    {
-      amount: 50000,
-    },
-    {
-      amount: 30000,
-    },
-  ],
+    const result =
+      await fetchAnalyticsData();
 
 
-  tenants: [
-    {
-      id:1,
-    },
-    {
-      id:2,
-    },
-  ],
+    expect(
+      result.totalRevenue
+    ).toBe(10000);
+
+    expect(
+      result.occupancyRate
+    ).toBe(66.67);
+
+    expect(
+      result.totalTenants
+    ).toBe(2);
+
+    expect(
+      result.paymentStatus
+    ).toEqual({
+      paid: 1,
+      pending: 1,
+      overdue: 1,
+    });
+
+    expect(
+      result.revenueTrend
+    ).toEqual([
+      {
+        month: "January",
+        amount: 5000,
+      },
+      {
+        month: "February",
+        amount: 3000,
+      },
+      {
+        month: "March",
+        amount: 2000,
+      },
+    ]);
+
+  });
 
 
-  rooms:[
-    {
-      status:"Occupied",
-    },
-    {
-      status:"Vacant",
-    },
-  ],
+  it("should return default analytics when no records exist", async () => {
+
+    fetchBillingRecords.mockResolvedValue([]);
+
+    fetchRooms.mockResolvedValue([]);
+
+    fetchTenants.mockResolvedValue([]);
 
 
-  payments:[
-    {
-      status:"Paid",
-    },
-    {
-      status:"Pending",
-    },
-    {
-      status:"Overdue",
-    },
-  ],
+    const result =
+      await fetchAnalyticsData();
 
 
-  revenueTrend:[],
+    expect(
+      result.totalRevenue
+    ).toBe(0);
 
-  recommendations:[],
-};
+    expect(
+      result.occupancyRate
+    ).toBe(0);
 
+    expect(
+      result.totalTenants
+    ).toBe(0);
 
+    expect(
+      result.paymentStatus
+    ).toEqual({
+      paid: 0,
+      pending: 0,
+      overdue: 0,
+    });
 
-it(
-"should calculate analytics successfully",
-async()=>{
-
-
-// Arrange
-
-getAnalyticsData.mockResolvedValue(
-  mockAnalytics
-);
-
-
-// Act
-
-const result =
- await fetchAnalyticsData();
+  });
 
 
-// Assert
+  it("should throw error when billing retrieval fails", async () => {
 
-expect(
- result.totalRevenue
-)
-.toBe(80000);
-
-
-expect(
- result.totalTenants
-)
-.toBe(2);
+    fetchBillingRecords.mockRejectedValue(
+      new Error("Database Error")
+    );
 
 
-expect(
- result.occupancyRate
-)
-.toBe(50);
+    await expect(
+      fetchAnalyticsData()
+    ).rejects.toThrow(
+      "Failed to retrieve analytics information."
+    );
+
+  });
 
 
-expect(
- result.paymentStatus
-)
-.toEqual({
-  paid:1,
-  pending:1,
-  overdue:1,
-});
+  it("should throw error when room retrieval fails", async () => {
+
+    fetchBillingRecords.mockResolvedValue([]);
+
+    fetchRooms.mockRejectedValue(
+      new Error("Room Database Error")
+    );
 
 
-});
+    await expect(
+      fetchAnalyticsData()
+    ).rejects.toThrow(
+      "Failed to retrieve analytics information."
+    );
+
+  });
 
 
+  it("should throw error when tenant retrieval fails", async () => {
 
-it(
-"should return null when no analytics data exists",
-async()=>{
+    fetchBillingRecords.mockResolvedValue([]);
 
+    fetchRooms.mockResolvedValue([]);
 
-getAnalyticsData.mockResolvedValue(
- null
-);
-
-
-const result =
- await fetchAnalyticsData();
+    fetchTenants.mockRejectedValue(
+      new Error("Tenant Database Error")
+    );
 
 
-expect(result)
-.toBeNull();
+    await expect(
+      fetchAnalyticsData()
+    ).rejects.toThrow(
+      "Failed to retrieve analytics information."
+    );
 
-
-});
-
-
-
-it(
-"should throw error when analytics retrieval fails",
-async()=>{
-
-
-getAnalyticsData.mockRejectedValue(
- new Error(
-  "Database Error"
- )
-);
-
-
-await expect(
- fetchAnalyticsData()
-)
-.rejects.toThrow(
- "Failed to retrieve analytics information."
-);
-
-
-});
-
+  });
 
 });
