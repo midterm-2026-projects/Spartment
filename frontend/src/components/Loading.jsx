@@ -1,9 +1,7 @@
-export default function Loading({
-  message = "Loading...",
-}) {
+export default function Loading() {
   return (
     <div>
-      <p>{message}</p>
+      <p>Loading...</p>
     </div>
   );
 }

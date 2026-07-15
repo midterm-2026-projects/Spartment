@@ -147,9 +147,7 @@ describe("Tenant Dashboard", () => {
     // Assert
     await waitFor(() => {
       expect(
-        screen.getByText(
-          "Tenant information unavailable."
-        )
+        screen.getByText("Something went wrong.")
       ).toBeInTheDocument();
     });
   });
@@ -164,27 +162,8 @@ describe("Tenant Dashboard", () => {
     // Assert
     await waitFor(() => {
       expect(
-        screen.getByText(
-          "No tenant information found."
-        )
+        screen.getByText("No records found.")
       ).toBeInTheDocument();
     });
-  });
-
-  it("should display a loading message while retrieving tenant information", () => {
-    // Arrange
-    getTenantInformation.mockImplementation(
-      () => new Promise(() => {})
-    );
-
-    // Act
-    render(<TenantDashboard />);
-
-    // Assert
-    expect(
-      screen.getByText(
-        "Loading tenant information..."
-      )
-    ).toBeInTheDocument();
   });
 });

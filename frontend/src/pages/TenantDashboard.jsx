@@ -32,21 +32,15 @@ export default function TenantDashboard() {
   }, []);
 
   if (loading) {
-    return (
-      <Loading message="Loading tenant information..." />
-    );
+    return <Loading />;
   }
 
   if (error) {
-    return (
-      <ErrorMessage message="Tenant information unavailable." />
-    );
+    return <ErrorMessage />;
   }
 
   if (!tenantData) {
-    return (
-      <EmptyState message="No tenant information found." />
-    );
+    return <EmptyState />;
   }
 
   return (

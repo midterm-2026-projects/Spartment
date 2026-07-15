@@ -1,9 +1,7 @@
-export default function ErrorMessage({
-  message = "Something went wrong.",
-}) {
+export default function ErrorMessage() {
   return (
     <div>
-      <p>{message}</p>
+      <p>Something went wrong.</p>
     </div>
   );
 }

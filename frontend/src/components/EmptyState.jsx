@@ -1,9 +1,7 @@
-export default function EmptyState({
-  message = "No records found.",
-}) {
+export default function EmptyState() {
   return (
     <div>
-      <p>{message}</p>
+      <p>No records found.</p>
     </div>
   );
 }
