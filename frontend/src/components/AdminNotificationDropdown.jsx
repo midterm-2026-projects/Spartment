@@ -1,22 +1,10 @@
 import { useState } from "react";
 
-export default function AdminNotificationDropdown() {
+export default function AdminNotificationDropdown({
+  notifications = [],
+  onMarkAsRead,
+}) {
   const [isOpen, setIsOpen] = useState(false);
-
-  const notifications = [
-    {
-      message: "Tenant payment is overdue.",
-      unread: true,
-    },
-    {
-      message: "Lease expires in 7 days.",
-      unread: true,
-    },
-    {
-      message: "New maintenance request submitted.",
-      unread: false,
-    },
-  ];
 
   return (
     <div>
@@ -28,16 +16,36 @@ export default function AdminNotificationDropdown() {
         <div>
           <h3>Admin Notifications</h3>
 
-          <ul>
-            {notifications.map((notification, index) => (
-              <li key={index}>
-                {notification.unread && (
-                  <span data-testid="unread-indicator">● </span>
-                )}
-                {notification.message}
-              </li>
-            ))}
-          </ul>
+          {notifications.length === 0 ? (
+            <p>No notifications found.</p>
+          ) : (
+            <ul>
+              {notifications.map((notification) => (
+                <li key={notification.id}>
+                  {notification.status === "Unread" && (
+                    <span data-testid="unread-indicator">
+                      ●{" "}
+                    </span>
+                  )}
+
+                  <strong>
+                    [{notification.category}]
+                  </strong>{" "}
+                  {notification.message}
+
+                  {notification.status === "Unread" && (
+                    <button
+                      onClick={() =>
+                        onMarkAsRead(notification.id)
+                      }
+                    >
+                      Mark as Read
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
     </div>

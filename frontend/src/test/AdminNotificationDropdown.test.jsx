@@ -1,11 +1,37 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import AdminNotificationDropdown from "../components/AdminNotificationDropdown";
 
 describe("AdminNotificationDropdown", () => {
+  const notifications = [
+    {
+      id: 1,
+      category: "Payment",
+      message: "Tenant payment is overdue.",
+      status: "Unread",
+    },
+    {
+      id: 2,
+      category: "Lease",
+      message: "Lease expires in 7 days.",
+      status: "Unread",
+    },
+    {
+      id: 3,
+      category: "Maintenance",
+      message: "New maintenance request submitted.",
+      status: "Read",
+    },
+  ];
+
   it("should render the admin notifications heading", () => {
     // Arrange
-    render(<AdminNotificationDropdown />);
+    render(
+      <AdminNotificationDropdown
+        notifications={notifications}
+        onMarkAsRead={vi.fn()}
+      />
+    );
 
     // Act
     fireEvent.click(
@@ -24,7 +50,12 @@ describe("AdminNotificationDropdown", () => {
 
   it("should display all admin notification messages", () => {
     // Arrange
-    render(<AdminNotificationDropdown />);
+    render(
+      <AdminNotificationDropdown
+        notifications={notifications}
+        onMarkAsRead={vi.fn()}
+      />
+    );
 
     // Act
     fireEvent.click(
@@ -49,7 +80,12 @@ describe("AdminNotificationDropdown", () => {
 
   it("should display unread notification indicators", () => {
     // Arrange
-    render(<AdminNotificationDropdown />);
+    render(
+      <AdminNotificationDropdown
+        notifications={notifications}
+        onMarkAsRead={vi.fn()}
+      />
+    );
 
     // Act
     fireEvent.click(
@@ -58,11 +94,11 @@ describe("AdminNotificationDropdown", () => {
       })
     );
 
+    // Assert
     const indicators = screen.getAllByTestId(
       "unread-indicator"
     );
 
-    // Assert
     expect(indicators).toHaveLength(2);
   });
 });

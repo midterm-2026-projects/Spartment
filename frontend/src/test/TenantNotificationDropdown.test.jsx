@@ -1,11 +1,37 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import TenantNotificationDropdown from "../components/TenantNotificationDropdown";
 
 describe("TenantNotificationDropdown", () => {
+  const notifications = [
+    {
+      id: 1,
+      category: "Payment",
+      message: "Your payment is due tomorrow.",
+      status: "Unread",
+    },
+    {
+      id: 2,
+      category: "Maintenance",
+      message: "Your maintenance request is being processed.",
+      status: "Read",
+    },
+    {
+      id: 3,
+      category: "Lease",
+      message: "Lease renewal is available.",
+      status: "Unread",
+    },
+  ];
+
   it("should render the tenant notifications heading", () => {
     // Arrange
-    render(<TenantNotificationDropdown />);
+    render(
+      <TenantNotificationDropdown
+        notifications={notifications}
+        onMarkAsRead={vi.fn()}
+      />
+    );
 
     // Act
     fireEvent.click(
@@ -24,7 +50,12 @@ describe("TenantNotificationDropdown", () => {
 
   it("should display all tenant notification messages", () => {
     // Arrange
-    render(<TenantNotificationDropdown />);
+    render(
+      <TenantNotificationDropdown
+        notifications={notifications}
+        onMarkAsRead={vi.fn()}
+      />
+    );
 
     // Act
     fireEvent.click(
@@ -51,7 +82,12 @@ describe("TenantNotificationDropdown", () => {
 
   it("should display unread notification indicators", () => {
     // Arrange
-    render(<TenantNotificationDropdown />);
+    render(
+      <TenantNotificationDropdown
+        notifications={notifications}
+        onMarkAsRead={vi.fn()}
+      />
+    );
 
     // Act
     fireEvent.click(
@@ -60,11 +96,11 @@ describe("TenantNotificationDropdown", () => {
       })
     );
 
+    // Assert
     const indicators = screen.getAllByTestId(
       "unread-indicator"
     );
 
-    // Assert
     expect(indicators).toHaveLength(2);
   });
 });

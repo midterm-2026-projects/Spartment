@@ -126,21 +126,45 @@
 ---
 
 ## Week 4 - Day 1
+
 ### Task Description
-**Implement Notification Dashboard**
 
-#### Sub-Tasks
-- Display active notifications
-- Mark notifications as read
+**Integrate Notification Dashboard with Backend**
 
-#### Deliverables
-- Active Notification Dashboard
-- Read Notification Feature
+---
 
-#### Test Suite / PR Acceptance Criteria
-- It should display active notifications, including payment, lease, room, and maintenance alerts, accurately on the notification dashboard.
-- It should update the notification status from **Unread** to **Read** when a user marks a notification as read successfully.
+### Sub-Tasks
 
+- Create Notification API
+- Connect Notification Dashboard to Notification Service
+- Display active notifications from the backend
+- Display notification categories from the backend
+- Update notification read status
+- Handle unavailable notification data
+- Create Notification Dashboard Integration Unit Tests
+
+---
+
+### Deliverables
+
+- Notification API
+- Notification Dashboard Integration
+- Connected Active Notifications
+- Connected Notification Categories
+- Notification Read Status Feature
+- Notification Error Message Handling
+- Notification Dashboard Integration Test
+
+---
+
+### Test Suite / PR Acceptance Criteria
+
+- It should retrieve active notifications from the backend successfully.
+- It should connect the Notification Dashboard to the Notification Service successfully.
+- It should display payment, lease, room, and maintenance notifications correctly using backend data.
+- It should update the notification status from Unread to Read successfully.
+- It should display an appropriate message when notification information is unavailable.
+- It should pass all Notification Dashboard Integration Vitest unit tests successfully.
 ---
 
 ## Week 4 - Day 2
