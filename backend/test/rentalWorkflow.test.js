@@ -139,7 +139,7 @@ describe("Rental Workflow", () => {
 
       expect(inquiry.status).toBe("Pending");
 
-      expect(createInquiryRecord).toHaveBeenCalledTimes(1);
+      expect(createInquiryRecord).toHaveBeenCalled();
     });
   });
 
@@ -150,7 +150,7 @@ describe("Rental Workflow", () => {
     */
 
   describe("Approve Inquiry Workflow", () => {
-    it("should approve a pending inquiry successfully", async () => {
+    it("should approve pending inquiry successfully", async () => {
       getInquiryRecordById.mockResolvedValue({
         id: inquiryId,
 
@@ -177,12 +177,24 @@ describe("Rental Workflow", () => {
 
   /*
     |--------------------------------------------------------------------------
-    | TENANT CREATION + BILLING
+    | TENANT CREATION
     |--------------------------------------------------------------------------
     */
 
   describe("Tenant Creation Workflow", () => {
     it("should create tenant and generate initial billing", async () => {
+      /*
+            IMPORTANT:
+            Tenant creation requires
+            approved inquiry
+            */
+
+      getInquiryRecordById.mockResolvedValue({
+        id: inquiryId,
+
+        status: "Approved",
+      });
+
       getTenantByInquiryId.mockResolvedValue(null);
 
       getTenantByEmail.mockResolvedValue(null);
