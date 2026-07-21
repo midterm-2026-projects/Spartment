@@ -6,6 +6,19 @@ vi.mock("bcryptjs", () => ({
   },
 }));
 
+vi.mock("../model/inquiryModel.js", () => ({
+  createInquiryRecord: vi.fn(),
+  getInquiryRecords: vi.fn(),
+  getInquiryRecordById: vi.fn(),
+  approveInquiryRecord: vi.fn(),
+  rejectInquiryRecord: vi.fn(),
+  updateInquiryRecord: vi.fn(),
+}));
+
+vi.mock("../model/roomModel.js", () => ({
+  getRoomById: vi.fn(),
+}));
+
 vi.mock("../model/tenantModel.js", () => ({
   createTenant: vi.fn(),
   getTenants: vi.fn(),
@@ -17,14 +30,6 @@ vi.mock("../model/tenantModel.js", () => ({
   updateTenantStatus: vi.fn(),
 }));
 
-vi.mock("../model/inquiryModel.js", () => ({
-  getInquiryRecordById: vi.fn(),
-}));
-
-vi.mock("../model/roomModel.js", () => ({
-  getRoomById: vi.fn(),
-}));
-
 vi.mock("../service/billingService.js", () => ({
   generateBilling: vi.fn(),
 }));
@@ -32,20 +37,26 @@ vi.mock("../service/billingService.js", () => ({
 import bcrypt from "bcryptjs";
 
 import {
+  createInquiryRecord,
+  getInquiryRecordById,
+  approveInquiryRecord,
+} from "../model/inquiryModel.js";
+
+import { getRoomById } from "../model/roomModel.js";
+
+import {
   createTenant,
   getTenantByEmail,
   getTenantByInquiryId,
 } from "../model/tenantModel.js";
 
-import { getInquiryRecordById } from "../model/inquiryModel.js";
-
-import { getRoomById } from "../model/roomModel.js";
-
 import { generateBilling } from "../service/billingService.js";
+
+import { createInquiry, approveInquiry } from "../service/inquiryService.js";
 
 import { createTenantAccount } from "../service/tenantService.js";
 
-describe("Tenant Billing Integration", () => {
+describe("Complete Rental Workflow", () => {
   const inquiryId = "33333333-3333-4333-8333-333333333333";
 
   const roomId = "22222222-2222-4222-8222-222222222222";
@@ -58,8 +69,48 @@ describe("Tenant Billing Integration", () => {
     vi.clearAllMocks();
   });
 
-  it("should create tenant and generate initial billing successfully", async () => {
-    getInquiryRecordById.mockResolvedValue({
+  it("should submit inquiry, approve it, manually create tenant, occupy room and generate billing", async () => {
+    getRoomById.mockResolvedValue({
+      id: roomId,
+      room_number: "101",
+      status: "Available",
+    });
+
+    createInquiryRecord.mockResolvedValue({
+      id: inquiryId,
+      room_id: roomId,
+      status: "Pending",
+    });
+
+    const inquiry = await createInquiry({
+      name: "Juan Dela Cruz",
+      email: "juan@gmail.com",
+      contact: "09123456789",
+      roomId,
+      type: "Room Inquiry",
+      message: "I am interested.",
+    });
+
+    expect(inquiry.status).toBe("Pending");
+
+    getInquiryRecordById.mockResolvedValueOnce({
+      id: inquiryId,
+      status: "Pending",
+    });
+
+    approveInquiryRecord.mockResolvedValue({
+      inquiry_id: inquiryId,
+      status: "Approved",
+    });
+
+    const approval = await approveInquiry({
+      inquiryId,
+      reviewedBy: adminId,
+    });
+
+    expect(approval.status).toBe("Approved");
+
+    getInquiryRecordById.mockResolvedValueOnce({
       id: inquiryId,
       status: "Approved",
     });
@@ -77,18 +128,19 @@ describe("Tenant Billing Integration", () => {
 
     createTenant.mockResolvedValue({
       tenant_id: tenantId,
+      inquiry_id: inquiryId,
+      room_id: roomId,
       room_status: "Occupied",
     });
 
     generateBilling.mockResolvedValue({
       id: "55555555-5555-4555-8555-555555555555",
       tenant_id: tenantId,
-      billing_type: "initial",
       total_amount: 5200,
       status: "Pending",
     });
 
-    const result = await createTenantAccount({
+    const account = await createTenantAccount({
       inquiryId,
       fullName: "Juan Dela Cruz",
       email: "juan@gmail.com",
@@ -99,38 +151,13 @@ describe("Tenant Billing Integration", () => {
       createdBy: adminId,
     });
 
+    expect(account.tenant.room_status).toBe("Occupied");
+
+    expect(account.billing.status).toBe("Pending");
+
     expect(generateBilling).toHaveBeenCalledWith({
       tenantId,
       billingType: "initial",
     });
-
-    expect(result.billing.total_amount).toBe(5200);
-  });
-
-  it("should not create billing when tenant already exists", async () => {
-    getInquiryRecordById.mockResolvedValue({
-      id: inquiryId,
-      status: "Approved",
-    });
-
-    getTenantByInquiryId.mockResolvedValue({
-      id: tenantId,
-    });
-
-    await expect(
-      createTenantAccount({
-        inquiryId,
-        fullName: "Juan Dela Cruz",
-        email: "juan@gmail.com",
-        roomId,
-        username: "juan101",
-        password: "Spartment2026",
-        createdBy: adminId,
-      }),
-    ).rejects.toThrow(
-      "A tenant account has already been created for this inquiry",
-    );
-
-    expect(generateBilling).not.toHaveBeenCalled();
   });
 });

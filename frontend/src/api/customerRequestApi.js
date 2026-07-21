@@ -1,35 +1,112 @@
-const API_URL = "http://localhost:5000/api/customer-requests";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  "http://localhost:5000/api";
+
+const API_URL = `${API_BASE_URL}/inquiries`;
+
+function getAuthHeaders() {
+  const token = localStorage.getItem("token");
+
+  return token
+    ? {
+        Authorization: `Bearer ${token}`,
+      }
+    : {};
+}
+
+async function parseResponse(response, fallbackMessage) {
+  const result = await response
+    .json()
+    .catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(
+      result?.message || fallbackMessage,
+    );
+  }
+
+  return result;
+}
 
 export async function getCustomerRequests() {
-  const response = await fetch(API_URL);
-
-  if (!response.ok) {
-    throw new Error("Failed to retrieve customer requests.");
-  }
-
-  return response.json();
-}
-
-export async function approveRequest(id) {
-  const response = await fetch(`${API_URL}/${id}/approve`, {
-    method: "PATCH",
+  const response = await fetch(API_URL, {
+    method: "GET",
+    headers: {
+      ...getAuthHeaders(),
+    },
   });
 
-  if (!response.ok) {
-    throw new Error("Failed to approve request.");
-  }
-
-  return response.json();
+  return parseResponse(
+    response,
+    "Failed to retrieve customer requests.",
+  );
 }
 
-export async function rejectRequest(id) {
-  const response = await fetch(`${API_URL}/${id}/reject`, {
-    method: "PATCH",
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to reject request.");
+export async function getCustomerRequestById(
+  inquiryId,
+) {
+  if (!inquiryId) {
+    throw new Error("Inquiry ID is required.");
   }
 
-  return response.json();
+  const response = await fetch(
+    `${API_URL}/${inquiryId}`,
+    {
+      method: "GET",
+      headers: {
+        ...getAuthHeaders(),
+      },
+    },
+  );
+
+  return parseResponse(
+    response,
+    "Failed to retrieve customer request.",
+  );
+}
+
+export async function approveRequest(
+  inquiryId,
+) {
+  if (!inquiryId) {
+    throw new Error("Inquiry ID is required.");
+  }
+
+  const response = await fetch(
+    `${API_URL}/${inquiryId}/approve`,
+    {
+      method: "PATCH",
+      headers: {
+        ...getAuthHeaders(),
+      },
+    },
+  );
+
+  return parseResponse(
+    response,
+    "Failed to approve request.",
+  );
+}
+
+export async function rejectRequest(
+  inquiryId,
+) {
+  if (!inquiryId) {
+    throw new Error("Inquiry ID is required.");
+  }
+
+  const response = await fetch(
+    `${API_URL}/${inquiryId}/reject`,
+    {
+      method: "PATCH",
+      headers: {
+        ...getAuthHeaders(),
+      },
+    },
+  );
+
+  return parseResponse(
+    response,
+    "Failed to reject request.",
+  );
 }

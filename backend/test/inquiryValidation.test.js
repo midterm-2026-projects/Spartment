@@ -1,118 +1,53 @@
-import {
-  describe,
-  expect,
-  it,
-} from "vitest";
+import { describe, expect, it } from "vitest";
 
-import {
-  validateInquiry,
-} from "../validation/inquiryValidation.js";
+import { validateInquiry } from "../validation/inquiryValidation.js";
 
+describe("Inquiry Validation", () => {
+  const validInquiry = {
+    name: "Juan Dela Cruz",
+    email: "juan@gmail.com",
+    roomId: "22222222-2222-4222-8222-222222222222",
+    type: "Room Inquiry",
+    message: "I am interested.",
+  };
 
-describe(
-  "Inquiry Validation",
-  () => {
+  it("should accept a valid inquiry", () => {
+    expect(validateInquiry(validInquiry)).toBe(true);
+  });
 
+  it("should require the tenant name", () => {
+    expect(() =>
+      validateInquiry({
+        ...validInquiry,
+        name: "",
+      }),
+    ).toThrow("Name is required.");
+  });
 
-    it(
-      "should validate complete inquiry information",
-      () => {
+  it("should reject an invalid email", () => {
+    expect(() =>
+      validateInquiry({
+        ...validInquiry,
+        email: "invalid-email",
+      }),
+    ).toThrow("Invalid email format.");
+  });
 
-        const data = {
-          name:
-            "Juan Dela Cruz",
+  it("should require roomId", () => {
+    expect(() =>
+      validateInquiry({
+        ...validInquiry,
+        roomId: null,
+      }),
+    ).toThrow("Room is required.");
+  });
 
-          email:
-            "juan@gmail.com",
-
-          room:
-            "101",
-
-          type:
-            "Inquiry",
-
-          message:
-            "Interested in room",
-        };
-
-
-        const result =
-          validateInquiry(data);
-
-
-        expect(result)
-          .toBe(true);
-
-      }
-    );
-
-
-
-    it.each([
-      [
-        {
-          email:
-            "test@gmail.com",
-          room:
-            "101",
-          type:
-            "Inquiry",
-          message:
-            "Hello",
-        },
-        "Name is required",
-      ],
-
-      [
-        {
-          name:
-            "Juan",
-          room:
-            "101",
-          type:
-            "Inquiry",
-          message:
-            "Hello",
-        },
-        "Email is required",
-      ],
-
-
-      [
-        {
-          name:
-            "Juan",
-          email:
-            "juan@gmail.com",
-          type:
-            "Inquiry",
-          message:
-            "Hello",
-        },
-        "Room is required",
-      ],
-
-    ])
-    (
-      "should throw validation error",
-      (
-        data,
-        errorMessage
-      ) => {
-
-
-        expect(
-          () =>
-            validateInquiry(data)
-        )
-        .toThrow(
-          errorMessage
-        );
-
-
-      }
-    );
-
-
-  }
-);
+  it("should require an inquiry message", () => {
+    expect(() =>
+      validateInquiry({
+        ...validInquiry,
+        message: "",
+      }),
+    ).toThrow("Message is required.");
+  });
+});

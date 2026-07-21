@@ -1,41 +1,74 @@
-export default function TenantInfoCards({
-  room = {
-    roomNumber: "",
-    monthlyRent: "",
-    nextDue: "",
-    riskLevel: "",
-  },
-}) {
+function formatCurrency(value) {
+  const number = Number(value || 0);
+
+  return `₱${number.toLocaleString()}`;
+}
+
+export default function TenantInfoCards({ tenant, room, billing, risk }) {
+  const roomNumber =
+    room?.roomNumber ||
+    room?.room_number ||
+    tenant?.room?.roomNumber ||
+    tenant?.room?.room_number ||
+    tenant?.roomNumber ||
+    tenant?.room_number ||
+    "Not assigned";
+
+  const monthlyRent =
+    room?.monthlyRent ??
+    room?.monthly_rent ??
+    tenant?.room?.monthlyRent ??
+    tenant?.room?.monthly_rent ??
+    tenant?.monthlyRent ??
+    tenant?.monthly_rent ??
+    0;
+
+  const nextDue =
+    billing?.nextDue ||
+    billing?.next_due ||
+    billing?.dueDate ||
+    billing?.due_date ||
+    "No billing record";
+
+  const riskLevel =
+    risk?.riskLevel ||
+    risk?.risk_level ||
+    tenant?.riskLevel ||
+    tenant?.risk_level ||
+    "Low";
+
   const cards = [
     {
       title: "My Room",
-      value: room.roomNumber || "0",
+      value: roomNumber,
     },
-
     {
       title: "Monthly Rent",
-      value: room.monthlyRent || "0",
+      value: formatCurrency(monthlyRent),
     },
-
     {
       title: "Next Due",
-      value: room.nextDue || "0",
+      value: nextDue,
     },
-
     {
       title: "Risk Level",
-      value: room.riskLevel || "Low",
+      value: riskLevel,
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-6">
+    <div className="mb-6 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
       {cards.map((card) => (
-        <div key={card.title} className="bg-white rounded-xl shadow p-5">
-          <h2 className="font-semibold">{card.title}</h2>
+        <article
+          key={card.title}
+          className="rounded-xl border bg-white p-5 shadow-sm"
+        >
+          <h2 className="font-medium text-gray-500">{card.title}</h2>
 
-          <p className="text-lg font-bold mt-2">{card.value}</p>
-        </div>
+          <p className="mt-2 break-words text-lg font-bold text-gray-900">
+            {card.value}
+          </p>
+        </article>
       ))}
     </div>
   );

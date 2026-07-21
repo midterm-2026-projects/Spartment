@@ -1,34 +1,33 @@
-export const validateInquiry = (data) => {
-  if (!data.name) {
-    throw new Error(
-      "Name is required"
-    );
+export function validateInquiry(data) {
+  if (!data) {
+    throw new Error("Inquiry information is required.");
   }
 
-  if (!data.email) {
-    throw new Error(
-      "Email is required"
-    );
+  if (!data.name || !String(data.name).trim()) {
+    throw new Error("Name is required.");
   }
 
-  if (!data.room) {
-    throw new Error(
-      "Room is required"
-    );
+  if (!data.email || !String(data.email).trim()) {
+    throw new Error("Email is required.");
   }
 
-  if (!data.type) {
-    throw new Error(
-      "Inquiry type is required"
-    );
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!emailPattern.test(String(data.email).trim())) {
+    throw new Error("Invalid email format.");
   }
 
-  if (!data.message) {
-    throw new Error(
-      "Message is required"
-    );
+  if (!data.roomId) {
+    throw new Error("Room is required.");
   }
 
+  if (!data.type || !String(data.type).trim()) {
+    throw new Error("Inquiry type is required.");
+  }
+
+  if (!data.message || !String(data.message).trim()) {
+    throw new Error("Message is required.");
+  }
 
   return true;
-};
+}

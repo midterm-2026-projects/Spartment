@@ -1,47 +1,97 @@
-export default function TenantCard({
-  tenant = {
-    name: "John Doe",
-    email: "john@email.com",
-    room: "Room 101",
-    rent: "₱5,000",
-    riskLevel: "Low",
-  },
-}) {
-  const riskStyles = {
-    Low: "bg-green-100 text-green-700",
+function getTenantName(tenant) {
+  return (
+    tenant.fullName ||
+    tenant.full_name ||
+    tenant.name ||
+    tenant.user?.fullName ||
+    tenant.user?.full_name ||
+    "Unknown tenant"
+  );
+}
 
-    Medium: "bg-yellow-100 text-yellow-700",
+function getTenantEmail(tenant) {
+  return tenant.email || tenant.user?.email || "No email";
+}
 
-    High: "bg-red-100 text-red-700",
+function getRoomNumber(tenant) {
+  return (
+    tenant.room?.roomNumber ||
+    tenant.room?.room_number ||
+    tenant.roomNumber ||
+    tenant.room_number ||
+    tenant.room ||
+    "Not assigned"
+  );
+}
+
+function getRent(tenant) {
+  return (
+    tenant.monthlyRent ??
+    tenant.monthly_rent ??
+    tenant.room?.monthlyRent ??
+    tenant.room?.monthly_rent ??
+    tenant.rent ??
+    0
+  );
+}
+
+export default function TenantCard({ tenant, onView }) {
+  if (!tenant) {
+    return null;
+  }
+
+  const status = tenant.status || "Active";
+
+  const statusStyles = {
+    active: "bg-green-100 text-green-700",
+    inactive: "bg-gray-100 text-gray-700",
+    suspended: "bg-red-100 text-red-700",
   };
 
+  const statusClass =
+    statusStyles[String(status).toLowerCase()] || statusStyles.active;
+
   return (
-    <div className="rounded-xl border bg-white shadow p-5">
-      <h2 className="text-xl font-bold">{tenant.name}</h2>
+    <article className="rounded-xl border bg-white p-5 shadow">
+      <div className="flex items-start justify-between gap-3">
+        <h2 className="text-xl font-bold">{getTenantName(tenant)}</h2>
 
-      <div className="mt-3 space-y-1">
-        <p>
-          <span className="font-semibold">Email:</span> {tenant.email}
-        </p>
-
-        <p>
-          <span className="font-semibold">Room:</span> {tenant.room}
-        </p>
-
-        <p>
-          <span className="font-semibold">Rent:</span> {tenant.rent}
-        </p>
-      </div>
-
-      <div className="mt-4">
         <span
-          className={`px-3 py-1 rounded-full text-sm font-semibold ${
-            riskStyles[tenant.riskLevel] || riskStyles.Low
-          }`}
+          className={`rounded-full px-3 py-1 text-sm font-medium ${statusClass}`}
         >
-          {tenant.riskLevel || "Low"} Risk
+          {status}
         </span>
       </div>
-    </div>
+
+      <div className="mt-4 space-y-2 text-gray-700">
+        <p>
+          <span className="font-semibold">Email:</span> {getTenantEmail(tenant)}
+        </p>
+
+        <p>
+          <span className="font-semibold">Room:</span> {getRoomNumber(tenant)}
+        </p>
+
+        <p>
+          <span className="font-semibold">Monthly Rent:</span> ₱
+          {Number(getRent(tenant)).toLocaleString()}
+        </p>
+
+        <p>
+          <span className="font-semibold">Move-in Date:</span>{" "}
+          {tenant.moveInDate || tenant.move_in_date || "Not available"}
+        </p>
+      </div>
+
+      {onView ? (
+        <button
+          type="button"
+          onClick={() => onView(tenant)}
+          className="mt-5 rounded-lg border border-blue-600 px-4 py-2 text-blue-600 hover:bg-blue-50"
+        >
+          View Details
+        </button>
+      ) : null}
+    </article>
   );
 }

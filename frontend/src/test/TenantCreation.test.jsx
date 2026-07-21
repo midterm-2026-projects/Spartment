@@ -1,83 +1,148 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { render, screen } from "@testing-library/react";
 
-import { describe, it, expect, vi } from "vitest";
-
 import TenantCreation from "../pages/TenantCreation";
-
 import useTenantCreation from "../hooks/useTenantCreation";
+import useRooms from "../hooks/useRooms";
 
 vi.mock("../hooks/useTenantCreation", () => ({
   default: vi.fn(),
 }));
 
+vi.mock("../hooks/useRooms", () => ({
+  default: vi.fn(),
+}));
+
+vi.mock("../components/AddTenantModal", () => ({
+  default: ({ open, loading, error }) =>
+    open ? (
+      <div role="dialog">
+        <p>Add Tenant Modal</p>
+
+        {loading && <p>Loading...</p>}
+
+        {error && <p role="alert">{error}</p>}
+      </div>
+    ) : null,
+}));
+
+const approvedInquiry = {
+  id: "inquiry-001",
+  name: "Juan Dela Cruz",
+  email: "juan101@email.com",
+  contact: "09123456789",
+  roomId: "room-001",
+  status: "Approved",
+};
+
+const defaultRoomsHook = {
+  rooms: [
+    {
+      id: "room-001",
+      roomNumber: "Room 101",
+      status: "Available",
+      monthlyRent: 5200,
+    },
+  ],
+  availableRooms: [],
+  loading: false,
+  error: "",
+  refetch: vi.fn(),
+};
+
+const defaultTenantHook = {
+  registerTenant: vi.fn(),
+  tenant: null,
+  billing: null,
+  credentials: null,
+  loading: false,
+  error: "",
+  clear: vi.fn(),
+};
+
 describe("Tenant Creation Page", () => {
-  it("should display tenant credentials and generated billing after creation", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    useRooms.mockReturnValue(defaultRoomsHook);
+
+    useTenantCreation.mockReturnValue(defaultTenantHook);
+  });
+
+  it("displays tenant credentials and generated billing", () => {
     useTenantCreation.mockReturnValue({
-      registerTenant: vi.fn(),
+      ...defaultTenantHook,
 
       tenant: {
+        id: "tenant-001",
+        fullName: "Juan Dela Cruz",
         email: "juan101@email.com",
+        status: "Active",
+      },
 
+      credentials: {
+        username: "juan101",
+        email: "juan101@email.com",
         password: "Tenant123",
       },
 
       billing: {
+        id: "billing-001",
         totalAmount: 5200,
-
         status: "Pending",
+        dueDate: "2026-08-05",
       },
-
-      loading: false,
-
-      error: null,
     });
 
-    render(<TenantCreation />);
+    render(<TenantCreation inquiry={approvedInquiry} />);
 
-    expect(screen.getByText("Tenant Creation")).toBeInTheDocument();
+    expect(screen.getByText("Juan Dela Cruz")).toBeInTheDocument();
 
-    expect(screen.getByText("juan101@email.com")).toBeInTheDocument();
+    expect(screen.getAllByText("juan101@email.com").length).toBeGreaterThan(0);
+
+    expect(screen.getByText("juan101")).toBeInTheDocument();
 
     expect(screen.getByText("Tenant123")).toBeInTheDocument();
 
-    expect(screen.getByText(/5200/)).toBeInTheDocument();
+    expect(screen.getByText(/5,200/)).toBeInTheDocument();
 
     expect(screen.getByText("Pending")).toBeInTheDocument();
+
+    expect(screen.getByText("2026-08-05")).toBeInTheDocument();
   });
 
-  it("should display loading state", () => {
+  it("displays tenant creation loading state", () => {
     useTenantCreation.mockReturnValue({
-      registerTenant: vi.fn(),
-
-      tenant: null,
-
-      billing: null,
-
+      ...defaultTenantHook,
       loading: true,
-
-      error: null,
     });
 
-    render(<TenantCreation />);
+    render(<TenantCreation inquiry={approvedInquiry} />);
 
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
   });
 
-  it("should display error message", () => {
+  it("displays tenant creation error", () => {
     useTenantCreation.mockReturnValue({
-      registerTenant: vi.fn(),
-
-      tenant: null,
-
-      billing: null,
-
-      loading: false,
-
+      ...defaultTenantHook,
       error: "Failed to create tenant.",
     });
 
+    render(<TenantCreation inquiry={approvedInquiry} />);
+
+    expect(
+      screen.getAllByText("Failed to create tenant.").length,
+    ).toBeGreaterThan(0);
+  });
+
+  it("shows an empty state without an approved inquiry", () => {
     render(<TenantCreation />);
 
-    expect(screen.getByText("Failed to create tenant.")).toBeInTheDocument();
+    expect(
+      screen.getByText(/must be created from an approved inquiry/i),
+    ).toBeInTheDocument();
+
+    expect(screen.getByText(/no records found/i)).toBeInTheDocument();
   });
 });

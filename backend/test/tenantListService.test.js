@@ -1,36 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-
-import { fetchTenantList } from "../service/tenantListService.js";
-
-import { getTenantList } from "../model/tenantListModel.js";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../model/tenantListModel.js", () => ({
   getTenantList: vi.fn(),
 }));
 
-const mockTenantList = [
-  {
-    id: 1,
-    name: "John Doe",
-    email: "john@email.com",
-    room: "Room 101",
-    rent: "₱5,000",
-  },
-  {
-    id: 2,
-    name: "Jane Smith",
-    email: "jane@email.com",
-    room: "Room 102",
-    rent: "₱6,000",
-  },
-  {
-    id: 3,
-    name: "Michael Santos",
-    email: "michael@email.com",
-    room: "Room 103",
-    rent: "₱5,500",
-  },
-];
+import { getTenantList } from "../model/tenantListModel.js";
+
+import { fetchTenantList } from "../service/tenantListService.js";
 
 describe("Tenant List Service", () => {
   beforeEach(() => {
@@ -38,44 +14,60 @@ describe("Tenant List Service", () => {
   });
 
   it("should retrieve tenant list successfully", async () => {
-    // Arrange
+    const tenants = [
+      {
+        id: "11111111-1111-4111-8111-111111111111",
+        full_name: "Juan Dela Cruz",
+        email: "juan@gmail.com",
+        status: "Active",
+      },
+      {
+        id: "22222222-2222-4222-8222-222222222222",
+        full_name: "Maria Santos",
+        email: "maria@gmail.com",
+        status: "Active",
+      },
+    ];
 
-    getTenantList.mockResolvedValue(mockTenantList);
-
-    // Act
+    getTenantList.mockResolvedValue(tenants);
 
     const result = await fetchTenantList();
-
-    // Assert
-
-    expect(result).toEqual(mockTenantList);
 
     expect(getTenantList).toHaveBeenCalledTimes(1);
+
+    expect(result).toEqual(tenants);
+    expect(result).toHaveLength(2);
   });
 
-  it("should return empty tenant list when no tenants exist", async () => {
-    // Arrange
-
+  it("should return an empty array when no tenant records exist", async () => {
     getTenantList.mockResolvedValue([]);
 
-    // Act
-
     const result = await fetchTenantList();
-
-    // Assert
 
     expect(result).toEqual([]);
   });
 
-  it("should throw error when retrieving tenant list fails", async () => {
-    // Arrange
+  it("should return an empty array when the model returns null", async () => {
+    getTenantList.mockResolvedValue(null);
 
+    const result = await fetchTenantList();
+
+    expect(result).toEqual([]);
+  });
+
+  it("should return an empty array when the model returns undefined", async () => {
+    getTenantList.mockResolvedValue(undefined);
+
+    const result = await fetchTenantList();
+
+    expect(result).toEqual([]);
+  });
+
+  it("should propagate an error when retrieving tenant list fails", async () => {
     getTenantList.mockRejectedValue(new Error("Database error"));
 
-    // Act + Assert
+    await expect(fetchTenantList()).rejects.toThrow("Database error");
 
-    await expect(fetchTenantList()).rejects.toThrow(
-      "Failed to retrieve tenant list.",
-    );
+    expect(getTenantList).toHaveBeenCalledTimes(1);
   });
 });

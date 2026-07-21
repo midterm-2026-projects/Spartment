@@ -5,19 +5,20 @@ import { submitInquiry } from "../api/inquiryApi";
 export default function useInquiry() {
   const [loading, setLoading] = useState(false);
 
-  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState("");
 
-  const [success, setSuccess] = useState(null);
+  const [error, setError] = useState("");
 
   const createInquiry = async (inquiryData) => {
     try {
       setLoading(true);
 
-      setError(null);
+      setError("");
+      setSuccess("");
 
       const response = await submitInquiry(inquiryData);
 
-      setSuccess(response.message);
+      setSuccess(response.message || "Inquiry submitted successfully.");
 
       return response;
     } catch (error) {
@@ -29,13 +30,16 @@ export default function useInquiry() {
     }
   };
 
+  const reset = () => {
+    setSuccess("");
+    setError("");
+  };
+
   return {
     createInquiry,
-
     loading,
-
-    error,
-
     success,
+    error,
+    reset,
   };
 }

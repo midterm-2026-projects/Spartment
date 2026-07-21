@@ -1,181 +1,156 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../service/tenantService.js", () => ({
-  createTenantAccount: vi.fn(),
-
+  fetchTenants: vi.fn(),
+  fetchTenantById: vi.fn(),
   updateTenantPassword: vi.fn(),
 }));
 
-vi.mock("../service/billingService.js", () => ({
-  generateBilling: vi.fn(),
-}));
-
 import {
-  createTenantAccount,
+  fetchTenants,
+  fetchTenantById,
   updateTenantPassword,
 } from "../service/tenantService.js";
 
-import { generateBilling } from "../service/billingService.js";
-
 import {
-  createTenant,
+  getTenants,
+  getTenantById,
   changeTenantPassword,
 } from "../controller/tenantController.js";
 
-function responseMock() {
+function createResponseMock() {
   return {
     status: vi.fn().mockReturnThis(),
-
     json: vi.fn(),
   };
 }
 
-describe("Tenant Controller API", () => {
+describe("Tenant Controller", () => {
+  const tenantId = "44444444-4444-4444-8444-444444444444";
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("should create tenant account successfully", async () => {
-    const mockTenant = {
-      id: 1,
-
-      fullName: "Juan Dela Cruz",
-
-      email: "juan@gmail.com",
-
-      contact: "09123456789",
-
-      room: "101",
-
-      username: "juan101",
-    };
-
-    const mockBilling = {
-      id: 1,
-
-      tenantId: 1,
-
-      billingType: "initial",
-
-      rentAmount: 5000,
-
-      waterBill: 200,
-
-      electricityBill: 0,
-
-      totalAmount: 5200,
-
-      status: "Pending",
-    };
-
-    createTenantAccount.mockResolvedValue(mockTenant);
-
-    generateBilling.mockResolvedValue(mockBilling);
-
-    const req = {
-      body: {
-        fullName: "Juan Dela Cruz",
-
+  it("should retrieve all tenants", async () => {
+    const tenants = [
+      {
+        id: tenantId,
+        full_name: "Juan Dela Cruz",
         email: "juan@gmail.com",
-
-        contact: "09123456789",
-
-        room: "101",
-
-        username: "juan101",
       },
-    };
+    ];
 
-    const res = responseMock();
+    fetchTenants.mockResolvedValue(tenants);
 
-    await createTenant(
-      req,
+    const req = {};
+    const res = createResponseMock();
 
-      res,
-    );
+    await getTenants(req, res);
 
-    expect(createTenantAccount).toHaveBeenCalledTimes(1);
+    expect(fetchTenants).toHaveBeenCalledTimes(1);
+    expect(res.status).toHaveBeenCalledWith(200);
 
-    expect(generateBilling).toHaveBeenCalledWith({
-      tenantId: 1,
-
-      billingType: "initial",
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: tenants,
     });
-
-    expect(res.status).toHaveBeenCalledWith(201);
-
-    const response = res.json.mock.calls[0][0];
-
-    expect(response.message).toBe("Tenant created successfully");
-
-    expect(response.data.tenant.email).toBe("juan@gmail.com");
-
-    expect(response.data.billing.totalAmount).toBe(5200);
-
-    expect(response.data.billing.status).toBe("Pending");
   });
 
-  it("should update tenant password successfully", async () => {
-    const updatedTenant = {
-      id: 1,
-
-      password: "newpass",
+  it("should retrieve one tenant", async () => {
+    const tenant = {
+      id: tenantId,
+      full_name: "Juan Dela Cruz",
+      email: "juan@gmail.com",
     };
 
-    updateTenantPassword.mockResolvedValue(updatedTenant);
+    fetchTenantById.mockResolvedValue(tenant);
 
     const req = {
       params: {
-        id: 1,
+        id: tenantId,
       },
-
-      body: {
-        password: "newpass",
+      user: {
+        id: "11111111-1111-4111-8111-111111111111",
+        role: "admin",
       },
     };
 
-    const res = responseMock();
+    const res = createResponseMock();
 
-    await changeTenantPassword(
-      req,
+    await getTenantById(req, res);
 
-      res,
-    );
+    expect(fetchTenantById).toHaveBeenCalledWith(tenantId);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: tenant,
+    });
+  });
+
+  it("should update the tenant password", async () => {
+    const updatedRecord = {
+      tenantId,
+      user: {
+        id: "55555555-5555-4555-8555-555555555555",
+        email: "juan@gmail.com",
+      },
+    };
+
+    updateTenantPassword.mockResolvedValue(updatedRecord);
+
+    const req = {
+      params: {
+        id: tenantId,
+      },
+      body: {
+        password: "newpassword123",
+      },
+      user: {
+        id: "11111111-1111-4111-8111-111111111111",
+        role: "admin",
+      },
+    };
+
+    const res = createResponseMock();
+
+    await changeTenantPassword(req, res);
 
     expect(updateTenantPassword).toHaveBeenCalledWith(
-      1,
-
-      "newpass",
+      tenantId,
+      "newpassword123",
     );
 
     expect(res.status).toHaveBeenCalledWith(200);
 
     const response = res.json.mock.calls[0][0];
 
-    expect(response.message).toBe("Password updated successfully");
-
-    expect(response.data.password).toBe("newpass");
+    expect(response.success).toBe(true);
+    expect(response.data).toEqual(updatedRecord);
   });
 
-  it("should return error when tenant creation fails", async () => {
-    createTenantAccount.mockRejectedValue(new Error("Tenant already exists."));
+  it("should return an error when the tenant is missing", async () => {
+    fetchTenantById.mockRejectedValue(new Error("Tenant not found"));
 
     const req = {
-      body: {},
+      params: {
+        id: tenantId,
+      },
+      user: {
+        role: "admin",
+      },
     };
 
-    const res = responseMock();
+    const res = createResponseMock();
 
-    await createTenant(
-      req,
+    await getTenantById(req, res);
 
-      res,
-    );
-
-    expect(res.status).toHaveBeenCalledWith(400);
-
-    const response = res.json.mock.calls[0][0];
-
-    expect(response.message).toBe("Tenant already exists.");
+    expect(res.status).toHaveBeenCalledWith(404);
+    expect(res.json).toHaveBeenCalledWith({
+      success: false,
+      message: "Tenant not found",
+    });
   });
 });

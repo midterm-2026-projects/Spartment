@@ -1,153 +1,128 @@
-import {
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("../model/inquiryModel.js", () => ({
+  createInquiryRecord: vi.fn(),
+  getInquiryRecords: vi.fn(),
+  getInquiryRecordById: vi.fn(),
+  approveInquiryRecord: vi.fn(),
+  rejectInquiryRecord: vi.fn(),
+  updateInquiryRecord: vi.fn(),
+}));
+
+vi.mock("../model/roomModel.js", () => ({
+  getRoomById: vi.fn(),
+}));
+
+import {
+  createInquiryRecord,
+  getInquiryRecords,
+  getInquiryRecordById,
+  approveInquiryRecord,
+  rejectInquiryRecord,
+} from "../model/inquiryModel.js";
+
+import { getRoomById } from "../model/roomModel.js";
 
 import {
   createInquiry,
   fetchInquiries,
-  changeInquiryStatus,
+  approveInquiry,
+  rejectInquiry,
 } from "../service/inquiryService.js";
 
+describe("Inquiry Service", () => {
+  const inquiryId = "33333333-3333-4333-8333-333333333333";
 
-import * as inquiryModel from "../model/inquiryModel.js";
+  const roomId = "22222222-2222-4222-8222-222222222222";
 
+  const adminId = "11111111-1111-4111-8111-111111111111";
 
-vi.mock(
-  "../model/inquiryModel.js",
-  () => ({
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-    createInquiryRecord:
-      vi.fn(),
-
-    getInquiryRecords:
-      vi.fn(),
-
-    getInquiryRecordById:
-      vi.fn(),
-
-    updateInquiryRecord:
-      vi.fn(),
-
-  })
-);
-
-
-
-describe(
-  "Inquiry Service",
-  () => {
-
-
-    beforeEach(() => {
-      vi.clearAllMocks();
+  it("should create an inquiry", async () => {
+    getRoomById.mockResolvedValue({
+      id: roomId,
+      status: "Available",
     });
 
+    createInquiryRecord.mockResolvedValue({
+      id: inquiryId,
+      status: "Pending",
+    });
 
+    const result = await createInquiry({
+      name: "Juan Dela Cruz",
+      email: "juan@gmail.com",
+      roomId,
+      type: "Room Inquiry",
+      message: "Interested",
+    });
 
-    it(
-      "should create inquiry successfully",
-      async () => {
+    expect(result.status).toBe("Pending");
+  });
 
+  it("should retrieve inquiries", async () => {
+    getInquiryRecords.mockResolvedValue([]);
 
-        const mockInquiry = {
-          id:1,
-          name:"Juan",
-          email:"juan@gmail.com",
-          room:"101",
-          type:"Inquiry",
-          message:"Interested",
-        };
+    await expect(fetchInquiries()).resolves.toEqual([]);
+  });
 
+  it("should approve inquiry without creating a tenant", async () => {
+    getInquiryRecordById.mockResolvedValue({
+      id: inquiryId,
+      status: "Pending",
+    });
 
-        inquiryModel
-        .createInquiryRecord
-        .mockReturnValue(
-          mockInquiry
-        );
+    approveInquiryRecord.mockResolvedValue({
+      inquiry_id: inquiryId,
+      status: "Approved",
+    });
 
+    const result = await approveInquiry({
+      inquiryId,
+      reviewedBy: adminId,
+    });
 
-        const result =
-          await createInquiry(
-            mockInquiry
-          );
+    expect(approveInquiryRecord).toHaveBeenCalledWith({
+      inquiryId,
+      reviewedBy: adminId,
+    });
 
+    expect(result.status).toBe("Approved");
+  });
 
-        expect(
-          result
-        )
-        .toEqual(
-          mockInquiry
-        );
+  it("should reject a pending inquiry", async () => {
+    getInquiryRecordById.mockResolvedValue({
+      id: inquiryId,
+      status: "Pending",
+    });
 
+    rejectInquiryRecord.mockResolvedValue({
+      inquiry_id: inquiryId,
+      status: "Rejected",
+    });
 
-      }
-    );
+    const result = await rejectInquiry({
+      inquiryId,
+      reviewedBy: adminId,
+    });
 
+    expect(result.status).toBe("Rejected");
+  });
 
+  it("should reject approval for a processed inquiry", async () => {
+    getInquiryRecordById.mockResolvedValue({
+      id: inquiryId,
+      status: "Approved",
+    });
 
-    it(
-      "should retrieve inquiries successfully",
-      async()=>{
-
-
-        inquiryModel
-        .getInquiryRecords
-        .mockReturnValue([]);
-
-
-        const result =
-          await fetchInquiries();
-
-
-        expect(result)
-        .toEqual([]);
-
-      }
-    );
-
-
-
-    it(
-      "should update inquiry status",
-      async()=>{
-
-
-        inquiryModel
-        .getInquiryRecordById
-        .mockReturnValue({
-          id:1
-        });
-
-
-        inquiryModel
-        .updateInquiryRecord
-        .mockReturnValue({
-          id:1,
-          status:"Approved"
-        });
-
-
-        const result =
-          await changeInquiryStatus(
-            1,
-            "Approved"
-          );
-
-
-        expect(result.status)
-        .toBe(
-          "Approved"
-        );
-
-
-      }
-    );
-
-
-  }
-);
+    await expect(
+      approveInquiry({
+        inquiryId,
+        reviewedBy: adminId,
+      }),
+    ).rejects.toThrow("Only pending inquiries can be approved");
+  });
+});

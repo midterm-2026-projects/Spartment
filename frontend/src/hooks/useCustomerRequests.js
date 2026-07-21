@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import {
   getCustomerRequests,
@@ -11,13 +11,18 @@ export default function useCustomerRequests() {
 
   const [loading, setLoading] = useState(true);
 
-  const [error, setError] = useState(null);
+  const [processingId, setProcessingId] = useState("");
 
-  const fetchRequests = async () => {
+  const [error, setError] = useState("");
+
+  const fetchRequests = useCallback(async () => {
     try {
       setLoading(true);
+      setError("");
 
-      const data = await getCustomerRequests();
+      const response = await getCustomerRequests();
+
+      const data = Array.isArray(response) ? response : response?.data || [];
 
       setRequests(data);
     } catch (error) {
@@ -25,35 +30,43 @@ export default function useCustomerRequests() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const approve = async (id) => {
-    await approveRequest(id);
+    try {
+      setProcessingId(id);
 
-    await fetchRequests();
+      await approveRequest(id);
+
+      await fetchRequests();
+    } finally {
+      setProcessingId("");
+    }
   };
 
   const reject = async (id) => {
-    await rejectRequest(id);
+    try {
+      setProcessingId(id);
 
-    await fetchRequests();
+      await rejectRequest(id);
+
+      await fetchRequests();
+    } finally {
+      setProcessingId("");
+    }
   };
 
   useEffect(() => {
     fetchRequests();
-  }, []);
+  }, [fetchRequests]);
 
   return {
     requests,
-
     loading,
-
+    processingId,
     error,
-
     approve,
-
     reject,
-
     refetch: fetchRequests,
   };
 }

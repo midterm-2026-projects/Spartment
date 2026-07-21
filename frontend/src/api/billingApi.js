@@ -3,7 +3,9 @@ import axios from "axios";
 const API_URL = "http://localhost:5000/api/billing";
 
 /*
+==========================================
 GET ALL BILLING
+==========================================
 */
 
 export async function getAllBilling() {
@@ -17,8 +19,11 @@ export async function getAllBilling() {
 }
 
 /*
+==========================================
 GET TENANT BILLING
+==========================================
 GET /api/billing/tenant/:tenantId
+==========================================
 */
 
 export async function getTenantBilling(tenantId) {
@@ -32,7 +37,9 @@ export async function getTenantBilling(tenantId) {
 }
 
 /*
+==========================================
 GENERATE BILLING
+==========================================
 */
 
 export async function generateBilling(billingData) {
@@ -50,7 +57,9 @@ export async function generateBilling(billingData) {
 }
 
 /*
+==========================================
 UPDATE BILLING STATUS
+==========================================
 */
 
 export async function updateBillingStatus(

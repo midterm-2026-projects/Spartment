@@ -1,48 +1,76 @@
+import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
+
 import TenantInfoCards from "../components/TenantInfoCards";
 
 describe("TenantInfoCards", () => {
-  const room = {
-    roomNumber: "Room 201",
-    monthlyRent: "₱7,500",
-    nextDue: "August 5, 2026",
-  };
+  it("displays room, rent, due date, and risk values", () => {
+    render(
+      <TenantInfoCards
+        tenant={{
+          id: "tenant-001",
+          fullName: "Juan Dela Cruz",
+        }}
+        room={{
+          id: "room-001",
+          roomNumber: "Room 201",
+          monthlyRent: 7500,
+        }}
+        billing={{
+          id: "billing-001",
+          dueDate: "August 5, 2026",
+          totalAmount: 7500,
+          status: "Pending",
+        }}
+        risk={{
+          riskLevel: "High",
+        }}
+      />,
+    );
 
-  it("should render the My Room, Monthly Rent, and Next Due cards", () => {
-    // Arrange
-    render(<TenantInfoCards room={room} />);
-
-    // Assert
-    expect(screen.getByText(/my room/i)).toBeInTheDocument();
-    expect(screen.getByText(/monthly rent/i)).toBeInTheDocument();
-    expect(screen.getByText(/next due/i)).toBeInTheDocument();
-  });
-
-  it("should display the provided card values correctly", () => {
-    // Arrange
-    render(<TenantInfoCards room={room} />);
-
-    // Assert
     expect(screen.getByText("Room 201")).toBeInTheDocument();
-    expect(screen.getByText("₱7,500")).toBeInTheDocument();
+
+    expect(screen.getByText(/7,500/)).toBeInTheDocument();
+
     expect(screen.getByText("August 5, 2026")).toBeInTheDocument();
+
+    expect(screen.getByText("High")).toBeInTheDocument();
   });
 
-  it("should display 0 when card values are not provided", () => {
-    // Arrange
+  it("supports snake_case values", () => {
     render(
       <TenantInfoCards
         room={{
-          roomNumber: "",
-          monthlyRent: "",
-          nextDue: "",
+          room_number: "Room 301",
+          monthly_rent: 6200,
         }}
-      />
+        billing={{
+          due_date: "September 5, 2026",
+        }}
+        risk={{
+          risk_level: "Medium",
+        }}
+      />,
     );
 
-    // Assert
-    const zeros = screen.getAllByText("0");
-    expect(zeros).toHaveLength(3);
+    expect(screen.getByText("Room 301")).toBeInTheDocument();
+
+    expect(screen.getByText(/6,200/)).toBeInTheDocument();
+
+    expect(screen.getByText("September 5, 2026")).toBeInTheDocument();
+  });
+
+  it("displays fallback values when information is missing", () => {
+    render(
+      <TenantInfoCards tenant={null} room={null} billing={null} risk={null} />,
+    );
+
+    expect(screen.getByText("Not assigned")).toBeInTheDocument();
+
+    expect(screen.getByText(/₱0/)).toBeInTheDocument();
+
+    expect(screen.getByText("No billing record")).toBeInTheDocument();
+
+    expect(screen.getByText("Low")).toBeInTheDocument();
   });
 });

@@ -1,31 +1,49 @@
 import express from "express";
 
+import authenticateUser from "../middleware/authMiddleware.js";
+
+import { requireAdmin } from "../middleware/roleMiddleware.js";
+
 import {
   submitInquiry,
   getInquiries,
-  updateInquiryStatus,
+  getInquiryById,
+  approveInquiryRequest,
+  rejectInquiryRequest,
 } from "../controller/inquiryController.js";
-
 
 const router = express.Router();
 
+/*
+|--------------------------------------------------------------------------
+| Public
+|--------------------------------------------------------------------------
+*/
 
-router.post(
-  "/",
-  submitInquiry
-);
+router.post("/", submitInquiry);
 
+/*
+|--------------------------------------------------------------------------
+| Admin
+|--------------------------------------------------------------------------
+*/
 
-router.get(
-  "/",
-  getInquiries
-);
+router.get("/", authenticateUser, requireAdmin, getInquiries);
 
+router.get("/:id", authenticateUser, requireAdmin, getInquiryById);
 
 router.patch(
-  "/:id",
-  updateInquiryStatus
+  "/:id/approve",
+  authenticateUser,
+  requireAdmin,
+  approveInquiryRequest,
 );
 
+router.patch(
+  "/:id/reject",
+  authenticateUser,
+  requireAdmin,
+  rejectInquiryRequest,
+);
 
 export default router;

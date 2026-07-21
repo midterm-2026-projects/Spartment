@@ -1,222 +1,267 @@
-import {
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("bcryptjs", () => ({
+  default: {
+    compare: vi.fn(),
+  },
+}));
+
+vi.mock("jsonwebtoken", () => ({
+  default: {
+    sign: vi.fn(),
+  },
+}));
 
 vi.mock("../model/authModel.js", () => ({
-  getUserByEmail: vi.fn(),
+  getUserByIdentifier: vi.fn(),
+  getUserById: vi.fn(),
 }));
 
-vi.mock("../validation/authValidation.js", () => ({
-  validateLoginCredentials: vi.fn(),
-}));
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
-import { getUserByEmail } from "../model/authModel.js";
+import { getUserByIdentifier, getUserById } from "../model/authModel.js";
 
-import { validateLoginCredentials } from "../validation/authValidation.js";
-
-import { authenticateUser } from "../service/authService.js";
+import {
+  loginUser,
+  authenticateUser,
+  fetchAuthenticatedUser,
+  logoutUser,
+} from "../service/authService.js";
 
 describe("Authentication Service", () => {
+  const previousJwtSecret = process.env.JWT_SECRET;
+
   beforeEach(() => {
     vi.clearAllMocks();
+
+    process.env.JWT_SECRET = "test-jwt-secret-key";
+
+    process.env.JWT_EXPIRES_IN = "1d";
   });
 
-  it("should authenticate an admin successfully", async () => {
-    // Arrange
-    const email = "admin@email.com";
-    const password = "admin123";
+  afterAll(() => {
+    process.env.JWT_SECRET = previousJwtSecret;
+  });
 
-    const mockAdmin = {
-      id: 1,
+  it("should authenticate an administrator using email", async () => {
+    const user = {
+      id: "11111111-1111-4111-8111-111111111111",
       name: "System Administrator",
-      email,
-      password,
+      email: "admin@email.com",
+      username: "administrator",
+      password_hash: "hashed-admin-password",
       role: "admin",
+      status: "Active",
+      created_at: "2026-07-21T00:00:00.000Z",
+      updated_at: "2026-07-21T00:00:00.000Z",
     };
 
-    getUserByEmail.mockResolvedValue(mockAdmin);
+    getUserByIdentifier.mockResolvedValue(user);
+    bcrypt.compare.mockResolvedValue(true);
+    jwt.sign.mockReturnValue("generated-token");
 
-    // Act
-    const result = await authenticateUser(
-      email,
-      password
-    );
-
-    // Assert
-    expect(validateLoginCredentials).toHaveBeenCalledWith(
-      email,
-      password
-    );
-
-    expect(getUserByEmail).toHaveBeenCalledWith(
-      email
-    );
-
-    expect(result).toEqual({
-      id: 1,
-      name: "System Administrator",
-      email,
-      role: "admin",
-    });
-  });
-
-  it("should authenticate a tenant successfully", async () => {
-    // Arrange
-    const email = "tenant@email.com";
-    const password = "tenant123";
-
-    const mockTenant = {
-      id: 2,
-      name: "Juan Dela Cruz",
-      email,
-      password,
-      role: "tenant",
-    };
-
-    getUserByEmail.mockResolvedValue(mockTenant);
-
-    // Act
-    const result = await authenticateUser(
-      email,
-      password
-    );
-
-    // Assert
-    expect(validateLoginCredentials).toHaveBeenCalledWith(
-      email,
-      password
-    );
-
-    expect(getUserByEmail).toHaveBeenCalledWith(
-      email
-    );
-
-    expect(result).toEqual({
-      id: 2,
-      name: "Juan Dela Cruz",
-      email,
-      role: "tenant",
-    });
-  });
-
-  it("should throw an error when the password is incorrect", async () => {
-    // Arrange
-    const email = "admin@email.com";
-
-    getUserByEmail.mockResolvedValue({
-      id: 1,
-      name: "System Administrator",
-      email,
+    const result = await loginUser({
+      identifier: "admin@email.com",
       password: "admin123",
+    });
+
+    expect(getUserByIdentifier).toHaveBeenCalledWith("admin@email.com");
+
+    expect(bcrypt.compare).toHaveBeenCalledWith(
+      "admin123",
+      "hashed-admin-password",
+    );
+
+    expect(jwt.sign).toHaveBeenCalledWith(
+      {
+        userId: user.id,
+        role: "admin",
+      },
+      "test-jwt-secret-key",
+      {
+        expiresIn: "1d",
+      },
+    );
+
+    expect(result).toEqual({
+      token: "generated-token",
+      tokenType: "Bearer",
+      user: {
+        id: user.id,
+        name: "System Administrator",
+        email: "admin@email.com",
+        username: "administrator",
+        role: "admin",
+        status: "Active",
+        createdAt: "2026-07-21T00:00:00.000Z",
+        updatedAt: "2026-07-21T00:00:00.000Z",
+      },
+    });
+  });
+
+  it("should authenticate using a username", async () => {
+    getUserByIdentifier.mockResolvedValue({
+      id: "22222222-2222-4222-8222-222222222222",
+      name: "Juan Dela Cruz",
+      email: "tenant@email.com",
+      username: "juan101",
+      password_hash: "hashed-password",
+      role: "tenant",
+      status: "Active",
+    });
+
+    bcrypt.compare.mockResolvedValue(true);
+    jwt.sign.mockReturnValue("tenant-token");
+
+    const result = await loginUser({
+      identifier: "juan101",
+      password: "tenant123",
+    });
+
+    expect(getUserByIdentifier).toHaveBeenCalledWith("juan101");
+
+    expect(result.token).toBe("tenant-token");
+    expect(result.user.role).toBe("tenant");
+  });
+
+  it("should reject an incorrect password", async () => {
+    getUserByIdentifier.mockResolvedValue({
+      id: "11111111-1111-4111-8111-111111111111",
+      password_hash: "hashed-password",
       role: "admin",
+      status: "Active",
     });
 
-    // Act & Assert
+    bcrypt.compare.mockResolvedValue(false);
+
     await expect(
-      authenticateUser(email, "wrongpassword")
-    ).rejects.toThrow("Invalid password.");
+      loginUser({
+        identifier: "admin@email.com",
+        password: "wrongpassword",
+      }),
+    ).rejects.toThrow("Invalid email, username, or password");
 
-    expect(validateLoginCredentials).toHaveBeenCalledWith(
-      email,
-      "wrongpassword"
-    );
-
-    expect(getUserByEmail).toHaveBeenCalledWith(
-      email
-    );
+    expect(jwt.sign).not.toHaveBeenCalled();
   });
 
-  it("should throw an error when the user does not exist", async () => {
-    // Arrange
-    const email = "unknown@email.com";
-    const password = "password123";
+  it("should reject a missing user", async () => {
+    getUserByIdentifier.mockResolvedValue(null);
 
-    getUserByEmail.mockRejectedValue(
-      new Error("User not found.")
-    );
-
-    // Act & Assert
     await expect(
-      authenticateUser(email, password)
-    ).rejects.toThrow("User not found.");
+      loginUser({
+        identifier: "unknown@email.com",
+        password: "password123",
+      }),
+    ).rejects.toThrow("Invalid email, username, or password");
 
-    expect(validateLoginCredentials).toHaveBeenCalledWith(
-      email,
-      password
-    );
-
-    expect(getUserByEmail).toHaveBeenCalledWith(
-      email
-    );
+    expect(bcrypt.compare).not.toHaveBeenCalled();
   });
 
-  it("should throw an error when the password is provided but the email is empty", async () => {
-    // Arrange
-    const email = "";
-    const password = "admin123";
-
-    validateLoginCredentials.mockImplementation(() => {
-      throw new Error("Email is required.");
+  it("should reject a suspended account", async () => {
+    getUserByIdentifier.mockResolvedValue({
+      id: "11111111-1111-4111-8111-111111111111",
+      password_hash: "hashed-password",
+      role: "admin",
+      status: "Suspended",
     });
 
-    // Act & Assert
+    bcrypt.compare.mockResolvedValue(true);
+
     await expect(
-      authenticateUser(email, password)
-    ).rejects.toThrow("Email is required.");
+      loginUser({
+        identifier: "admin@email.com",
+        password: "admin123",
+      }),
+    ).rejects.toThrow("Account is suspended");
 
-    expect(validateLoginCredentials).toHaveBeenCalledWith(
-      email,
-      password
-    );
-
-    expect(getUserByEmail).not.toHaveBeenCalled();
+    expect(jwt.sign).not.toHaveBeenCalled();
   });
 
-  it("should throw an error when the email is provided but the password is empty", async () => {
-    // Arrange
-    const email = "admin@email.com";
-    const password = "";
-
-    validateLoginCredentials.mockImplementation(() => {
-      throw new Error("Password is required.");
-    });
-
-    // Act & Assert
+  it("should require an identifier", async () => {
     await expect(
-      authenticateUser(email, password)
-    ).rejects.toThrow("Password is required.");
+      loginUser({
+        identifier: "",
+        password: "admin123",
+      }),
+    ).rejects.toThrow("Email or username is required");
 
-    expect(validateLoginCredentials).toHaveBeenCalledWith(
-      email,
-      password
-    );
-
-    expect(getUserByEmail).not.toHaveBeenCalled();
+    expect(getUserByIdentifier).not.toHaveBeenCalled();
   });
 
-  it("should not retrieve the user when the email format is invalid", async () => {
-    // Arrange
-    const email = "adminemail.com";
-    const password = "admin123";
+  it("should require a password", async () => {
+    await expect(
+      loginUser({
+        identifier: "admin@email.com",
+        password: "",
+      }),
+    ).rejects.toThrow("Password is required");
 
-    validateLoginCredentials.mockImplementation(() => {
-      throw new Error("Invalid email format.");
+    expect(getUserByIdentifier).not.toHaveBeenCalled();
+  });
+
+  it("should support the compatibility authenticateUser function", async () => {
+    getUserByIdentifier.mockResolvedValue({
+      id: "11111111-1111-4111-8111-111111111111",
+      name: "System Administrator",
+      email: "admin@email.com",
+      username: "administrator",
+      password_hash: "hashed-password",
+      role: "admin",
+      status: "Active",
     });
 
-    // Act & Assert
+    bcrypt.compare.mockResolvedValue(true);
+    jwt.sign.mockReturnValue("generated-token");
+
+    const result = await authenticateUser("admin@email.com", "admin123");
+
+    expect(result.token).toBe("generated-token");
+  });
+
+  it("should retrieve the authenticated user", async () => {
+    const userId = "11111111-1111-4111-8111-111111111111";
+
+    getUserById.mockResolvedValue({
+      id: userId,
+      name: "System Administrator",
+      email: "admin@email.com",
+      username: "administrator",
+      role: "admin",
+      status: "Active",
+      created_at: "2026-07-21",
+      updated_at: "2026-07-21",
+    });
+
+    const result = await fetchAuthenticatedUser(userId);
+
+    expect(getUserById).toHaveBeenCalledWith(userId);
+
+    expect(result.password_hash).toBeUndefined();
+    expect(result.role).toBe("admin");
+  });
+
+  it("should complete stateless logout", async () => {
+    await expect(logoutUser()).resolves.toBe(true);
+  });
+
+  it("should throw when JWT_SECRET is missing", async () => {
+    delete process.env.JWT_SECRET;
+
+    getUserByIdentifier.mockResolvedValue({
+      id: "11111111-1111-4111-8111-111111111111",
+      password_hash: "hashed-password",
+      role: "admin",
+      status: "Active",
+    });
+
+    bcrypt.compare.mockResolvedValue(true);
+
     await expect(
-      authenticateUser(email, password)
-    ).rejects.toThrow("Invalid email format.");
-
-    expect(validateLoginCredentials).toHaveBeenCalledWith(
-      email,
-      password
-    );
-
-    expect(getUserByEmail).not.toHaveBeenCalled();
+      loginUser({
+        identifier: "admin@email.com",
+        password: "admin123",
+      }),
+    ).rejects.toThrow("JWT_SECRET is missing");
   });
 });

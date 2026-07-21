@@ -1,11 +1,15 @@
 import { getTenantList } from "../model/tenantListModel.js";
 
-export async function fetchTenantList() {
-  try {
-    const tenants = await getTenantList();
+/*
+|--------------------------------------------------------------------------
+| Fetch Tenant List
+|--------------------------------------------------------------------------
+| Compatibility service for existing modules that use tenantListService.
+|--------------------------------------------------------------------------
+*/
 
-    return tenants;
-  } catch (error) {
-    throw new Error("Failed to retrieve tenant list.");
-  }
+export async function fetchTenantList() {
+  const tenants = await getTenantList();
+
+  return tenants ?? [];
 }

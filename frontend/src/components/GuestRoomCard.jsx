@@ -1,49 +1,56 @@
 import RoomAvailabilityBadge from "./RoomAvailabilityBadge";
 
-export default function GuestRoomCard({
-  room,
-  onInquiry,
-}) {
-  const available =
-    room.status === "Vacant";
+function getRoomNumber(room) {
+  return room.roomNumber || room.room_number || room.name || "Unknown";
+}
+
+function getRoomPrice(room) {
+  return room.monthlyRent ?? room.monthly_rent ?? room.rent ?? room.price ?? 0;
+}
+
+export default function GuestRoomCard({ room, onInquiry }) {
+  const status = String(room?.status || "").toLowerCase();
+
+  const available = status === "available";
+
+  const roomNumber = getRoomNumber(room);
+  const price = getRoomPrice(room);
 
   return (
-    <div className="border rounded-lg p-5">
-
-      <div className="flex justify-between items-center">
+    <article className="rounded-xl border bg-white p-5 shadow-sm">
+      <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">
-          Room {room.roomNumber}
+          {roomNumber.toLowerCase().startsWith("room")
+            ? roomNumber
+            : `Room ${roomNumber}`}
         </h2>
 
-        <RoomAvailabilityBadge
-          status={room.status}
-        />
+        <RoomAvailabilityBadge status={room.status} />
       </div>
 
+      <div className="mt-4 space-y-1 text-gray-700">
+        <p>
+          Monthly Rent:{" "}
+          <span className="font-semibold">
+            ₱{Number(price).toLocaleString()}
+          </span>
+        </p>
 
-      <p className="mt-2">
-        Price: ₱{room.price}
-      </p>
-
+        {room.capacity ? <p>Capacity: {room.capacity}</p> : null}
+      </div>
 
       <button
+        type="button"
         disabled={!available}
-        onClick={() =>
-          onInquiry(room)
-        }
+        onClick={() => onInquiry?.(room)}
         className={
           available
-            ? "mt-4 bg-blue-600 text-white px-4 py-2 rounded"
-            : "mt-4 bg-gray-400 text-white px-4 py-2 rounded cursor-not-allowed"
+            ? "mt-5 w-full rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+            : "mt-5 w-full cursor-not-allowed rounded-lg bg-gray-300 px-4 py-2 text-gray-600"
         }
       >
-        {
-          available
-            ? "Inquiry"
-            : "Unavailable"
-        }
+        {available ? "Send Inquiry" : "Unavailable"}
       </button>
-
-    </div>
+    </article>
   );
 }

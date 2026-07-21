@@ -1,44 +1,48 @@
 import express from "express";
 
 import {
-  fetchRooms,
-  fetchAvailableRooms,
-} from "../controller/roomController.js";
+  login,
+  logout,
+  getCurrentUser,
+} from "../controller/authController.js";
 
 import authenticateUser from "../middleware/authMiddleware.js";
-
-import {
-  requireAdmin,
-} from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 
 /*
 |--------------------------------------------------------------------------
-| Get All Rooms
-|--------------------------------------------------------------------------
-| Admin only
+| Login
 |--------------------------------------------------------------------------
 */
 
-router.get(
-  "/",
-  authenticateUser,
-  requireAdmin,
-  fetchRooms
+router.post(
+  "/login",
+  login
 );
 
 /*
 |--------------------------------------------------------------------------
-| Get Available Rooms
-|--------------------------------------------------------------------------
-| Public
+| Current Authenticated User
 |--------------------------------------------------------------------------
 */
 
 router.get(
-  "/available",
-  fetchAvailableRooms
+  "/me",
+  authenticateUser,
+  getCurrentUser
+);
+
+/*
+|--------------------------------------------------------------------------
+| Logout
+|--------------------------------------------------------------------------
+*/
+
+router.post(
+  "/logout",
+  authenticateUser,
+  logout
 );
 
 export default router;

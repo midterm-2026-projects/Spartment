@@ -1,103 +1,129 @@
 import {
   createInquiry,
   fetchInquiries,
-  changeInquiryStatus,
+  fetchInquiryById,
+  approveInquiry,
+  rejectInquiry,
 } from "../service/inquiryService.js";
 
+function determineStatusCode(error) {
+  const message = error?.message?.toLowerCase() ?? "";
 
-export const submitInquiry = async (
-  req,
-  res
-) => {
-
-  try {
-
-    const inquiry =
-      await createInquiry(
-        req.body
-      );
-
-
-    res.status(201).json({
-      message:
-        "Inquiry submitted successfully",
-      data:
-        inquiry,
-    });
-
-
-  } catch (error) {
-
-    res.status(400).json({
-      message:
-        error.message,
-    });
-
+  if (message.includes("not found")) {
+    return 404;
   }
 
-};
-
-
-
-export const getInquiries = async (
-  req,
-  res
-) => {
-
-  try {
-
-    const inquiries =
-      await fetchInquiries();
-
-
-    res.status(200).json(
-      inquiries
-    );
-
-
-  } catch (error) {
-
-    res.status(500).json({
-      message:
-        error.message,
-    });
-
+  if (
+    message.includes("required") ||
+    message.includes("invalid") ||
+    message.includes("only pending") ||
+    message.includes("not available")
+  ) {
+    return 400;
   }
 
-};
+  return 500;
+}
 
-
-
-export const updateInquiryStatus = async (
-  req,
-  res
-) => {
-
+export async function submitInquiry(req, res) {
   try {
+    const inquiry = await createInquiry(req.body);
 
-    const updatedInquiry =
-      await changeInquiryStatus(
-        req.params.id,
-        req.body.status
-      );
-
-
-    res.status(200).json({
-      message:
-        "Inquiry updated successfully",
-
-      data:
-        updatedInquiry,
+    return res.status(201).json({
+      success: true,
+      message: "Inquiry submitted successfully",
+      data: inquiry,
     });
-
-
   } catch (error) {
+    return res.status(determineStatusCode(error)).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
 
-    res.status(400).json({
-      message:
-        error.message,
+export async function getInquiries(req, res) {
+  try {
+    const inquiries = await fetchInquiries();
+
+    return res.status(200).json({
+      success: true,
+      data: inquiries,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
+export async function getInquiryById(req, res) {
+  try {
+    const inquiry = await fetchInquiryById(req.params.id);
+
+    return res.status(200).json({
+      success: true,
+      data: inquiry,
+    });
+  } catch (error) {
+    return res.status(determineStatusCode(error)).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
+export async function approveInquiryRequest(req, res) {
+  try {
+    const result = await approveInquiry({
+      inquiryId: req.params.id,
+      reviewedBy: req.user.id,
     });
 
+    return res.status(200).json({
+      success: true,
+      message: "Inquiry approved successfully",
+      data: result,
+    });
+  } catch (error) {
+    return res.status(determineStatusCode(error)).json({
+      success: false,
+      message: error.message,
+    });
   }
+}
 
-};
+export async function rejectInquiryRequest(req, res) {
+  try {
+    const result = await rejectInquiry({
+      inquiryId: req.params.id,
+      reviewedBy: req.user.id,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Inquiry rejected successfully",
+      data: result,
+    });
+  } catch (error) {
+    return res.status(determineStatusCode(error)).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
+/*
+|--------------------------------------------------------------------------
+| Compatibility exports
+|--------------------------------------------------------------------------
+*/
+
+export const createInquiryController = submitInquiry;
+
+export const retrieveInquiries = getInquiries;
+
+export const approveInquiryController = approveInquiryRequest;
+
+export const rejectInquiryController = rejectInquiryRequest;

@@ -1,205 +1,211 @@
-import {
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../model/notificationModel.js", () => ({
   getNotifications: vi.fn(),
+  getUnreadNotificationCount: vi.fn(),
   updateNotificationStatus: vi.fn(),
+  updateAllNotificationStatuses: vi.fn(),
+  deleteNotificationRecord: vi.fn(),
 }));
 
 import {
   getNotifications,
+  getUnreadNotificationCount,
   updateNotificationStatus,
+  updateAllNotificationStatuses,
+  deleteNotificationRecord,
 } from "../model/notificationModel.js";
 
 import {
   fetchNotifications,
+  fetchUserNotifications,
+  fetchUnreadNotificationCount,
   markNotificationAsRead,
+  markAllNotificationsAsRead,
+  deleteNotificationById,
 } from "../service/notificationService.js";
 
-const mockNotifications = [
-  {
-    id: 1,
-    role: "admin",
-    category: "Payment",
-    message: "Tenant payment is overdue.",
-    status: "Unread",
-  },
-  {
-    id: 2,
-    role: "admin",
-    category: "Lease",
-    message: "Lease expires in 7 days.",
-    status: "Unread",
-  },
-  {
-    id: 3,
-    role: "admin",
-    category: "Room",
-    message: "Room 102 is now vacant.",
-    status: "Read",
-  },
-  {
-    id: 4,
-    role: "admin",
-    category: "Maintenance",
-    message: "New maintenance request submitted.",
-    status: "Unread",
-  },
-  {
-    id: 5,
-    role: "tenant",
-    category: "Payment",
-    message: "Your payment is due tomorrow.",
-    status: "Unread",
-  },
-  {
-    id: 6,
-    role: "tenant",
-    category: "Maintenance",
-    message:
-      "Your maintenance request is being processed.",
-    status: "Read",
-  },
-  {
-    id: 7,
-    role: "tenant",
-    category: "Lease",
-    message:
-      "Lease renewal is available.",
-    status: "Unread",
-  },
-];
-
 describe("Notification Service", () => {
+  const userId = "11111111-1111-4111-8111-111111111111";
+
+  const notificationId = "22222222-2222-4222-8222-222222222222";
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("should retrieve admin notifications successfully", async () => {
-    // Arrange
-    getNotifications.mockResolvedValue(
-      mockNotifications.filter(
-        (notification) =>
-          notification.role === "admin"
-      )
-    );
+  it("should retrieve notifications successfully", async () => {
+    const notifications = [
+      {
+        id: notificationId,
+        user_id: userId,
+        title: "Inquiry approved",
+        message: "Your inquiry has been approved.",
+        is_read: false,
+      },
+    ];
 
-    // Act
-    const result =
-      await fetchNotifications("admin");
+    getNotifications.mockResolvedValue(notifications);
 
-    // Assert
-    expect(
-      getNotifications
-    ).toHaveBeenCalledWith("admin");
+    const result = await fetchNotifications(userId);
 
-    expect(result).toHaveLength(4);
+    expect(getNotifications).toHaveBeenCalledWith(userId);
 
-    expect(result.every(
-      (notification) =>
-        notification.role === "admin"
-    )).toBe(true);
+    expect(result).toEqual(notifications);
   });
 
-  it("should retrieve tenant notifications successfully", async () => {
-    // Arrange
-    getNotifications.mockResolvedValue(
-      mockNotifications.filter(
-        (notification) =>
-          notification.role === "tenant"
-      )
-    );
-
-    // Act
-    const result =
-      await fetchNotifications("tenant");
-
-    // Assert
-    expect(
-      getNotifications
-    ).toHaveBeenCalledWith("tenant");
-
-    expect(result).toHaveLength(3);
-
-    expect(result.every(
-      (notification) =>
-        notification.role === "tenant"
-    )).toBe(true);
-  });
-
-  it("should return an empty notification list", async () => {
-    // Arrange
+  it("should retrieve notifications using fetchUserNotifications", async () => {
     getNotifications.mockResolvedValue([]);
 
-    // Act
-    const result =
-      await fetchNotifications("admin");
-
-    // Assert
-    expect(
-      getNotifications
-    ).toHaveBeenCalledWith("admin");
+    const result = await fetchUserNotifications(userId);
 
     expect(result).toEqual([]);
+
+    expect(getNotifications).toHaveBeenCalledWith(userId);
   });
 
-  it("should throw an error when retrieving notifications fails", async () => {
-    // Arrange
-    getNotifications.mockRejectedValue(
-      new Error("Database Error")
+  it("should require a user ID when retrieving notifications", async () => {
+    await expect(fetchNotifications(null)).rejects.toThrow(
+      "User ID is required",
     );
 
-    // Act & Assert
-    await expect(
-      fetchNotifications("admin")
-    ).rejects.toThrow(
-      "Failed to retrieve notifications."
-    );
+    expect(getNotifications).not.toHaveBeenCalled();
   });
 
-  it("should update the notification status successfully", async () => {
-    // Arrange
+  it("should propagate an error when retrieving notifications fails", async () => {
+    getNotifications.mockRejectedValue(new Error("Database Error"));
+
+    await expect(fetchNotifications(userId)).rejects.toThrow("Database Error");
+  });
+
+  it("should retrieve unread notification count", async () => {
+    getUnreadNotificationCount.mockResolvedValue(3);
+
+    const result = await fetchUnreadNotificationCount(userId);
+
+    expect(getUnreadNotificationCount).toHaveBeenCalledWith(userId);
+
+    expect(result).toBe(3);
+  });
+
+  it("should require a user ID when retrieving unread count", async () => {
+    await expect(fetchUnreadNotificationCount(null)).rejects.toThrow(
+      "User ID is required",
+    );
+
+    expect(getUnreadNotificationCount).not.toHaveBeenCalled();
+  });
+
+  it("should update notification status successfully", async () => {
     const updatedNotification = {
-      ...mockNotifications[0],
-      status: "Read",
+      id: notificationId,
+      user_id: userId,
+      is_read: true,
     };
 
-    updateNotificationStatus.mockResolvedValue(
-      updatedNotification
+    updateNotificationStatus.mockResolvedValue(updatedNotification);
+
+    const result = await markNotificationAsRead(notificationId, userId);
+
+    expect(updateNotificationStatus).toHaveBeenCalledWith(
+      notificationId,
+      userId,
+      true,
     );
 
-    // Act
-    const result =
-      await markNotificationAsRead(1);
-
-    // Assert
-    expect(
-      updateNotificationStatus
-    ).toHaveBeenCalledWith(1);
-
-    expect(result.status).toBe("Read");
+    expect(result).toEqual(updatedNotification);
   });
 
-  it("should throw an error when the notification does not exist", async () => {
-    // Arrange
-    updateNotificationStatus.mockRejectedValue(
-      new Error("Notification not found.")
-    );
+  it("should throw when notification does not exist", async () => {
+    updateNotificationStatus.mockResolvedValue(null);
 
-    // Act & Assert
     await expect(
-      markNotificationAsRead(99)
-    ).rejects.toThrow(
-      "Notification not found."
+      markNotificationAsRead(notificationId, userId),
+    ).rejects.toThrow("Notification not found");
+  });
+
+  it("should require a notification ID when marking as read", async () => {
+    await expect(markNotificationAsRead(null, userId)).rejects.toThrow(
+      "Notification ID is required",
     );
 
-    expect(
-      updateNotificationStatus
-    ).toHaveBeenCalledWith(99);
+    expect(updateNotificationStatus).not.toHaveBeenCalled();
+  });
+
+  it("should require a user ID when marking as read", async () => {
+    await expect(markNotificationAsRead(notificationId, null)).rejects.toThrow(
+      "User ID is required",
+    );
+
+    expect(updateNotificationStatus).not.toHaveBeenCalled();
+  });
+
+  it("should mark all notifications as read", async () => {
+    const notifications = [
+      {
+        id: notificationId,
+        user_id: userId,
+        is_read: true,
+      },
+    ];
+
+    updateAllNotificationStatuses.mockResolvedValue(notifications);
+
+    const result = await markAllNotificationsAsRead(userId);
+
+    expect(updateAllNotificationStatuses).toHaveBeenCalledWith(userId);
+
+    expect(result).toEqual(notifications);
+  });
+
+  it("should require a user ID when marking all as read", async () => {
+    await expect(markAllNotificationsAsRead(null)).rejects.toThrow(
+      "User ID is required",
+    );
+
+    expect(updateAllNotificationStatuses).not.toHaveBeenCalled();
+  });
+
+  it("should delete a notification successfully", async () => {
+    deleteNotificationRecord.mockResolvedValue({
+      id: notificationId,
+      user_id: userId,
+    });
+
+    const result = await deleteNotificationById(notificationId, userId);
+
+    expect(deleteNotificationRecord).toHaveBeenCalledWith(
+      notificationId,
+      userId,
+    );
+
+    expect(result).toEqual({
+      id: notificationId,
+      user_id: userId,
+    });
+  });
+
+  it("should throw when notification to delete does not exist", async () => {
+    deleteNotificationRecord.mockResolvedValue(null);
+
+    await expect(
+      deleteNotificationById(notificationId, userId),
+    ).rejects.toThrow("Notification not found");
+  });
+
+  it("should require notification ID when deleting", async () => {
+    await expect(deleteNotificationById(null, userId)).rejects.toThrow(
+      "Notification ID is required",
+    );
+
+    expect(deleteNotificationRecord).not.toHaveBeenCalled();
+  });
+
+  it("should require user ID when deleting", async () => {
+    await expect(deleteNotificationById(notificationId, null)).rejects.toThrow(
+      "User ID is required",
+    );
+
+    expect(deleteNotificationRecord).not.toHaveBeenCalled();
   });
 });

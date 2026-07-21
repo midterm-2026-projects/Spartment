@@ -2,7 +2,9 @@ import { http, HttpResponse } from "msw";
 
 export const handlers = [
   /*
+==========================================
 BILLING API
+==========================================
 */
 
   http.get("http://localhost:5000/api/billing", () => {
@@ -87,7 +89,9 @@ BILLING API
   ),
 
   /*
+==========================================
 PAYMENT API
+==========================================
 */
 
   http.patch(
@@ -134,7 +138,9 @@ PAYMENT API
   }),
 
   /*
+==========================================
 ANALYTICS API
+==========================================
 */
 
   http.get("http://localhost:5000/analytics", () => {
@@ -173,7 +179,9 @@ ANALYTICS API
   }),
 
   /*
+==========================================
 ROOM API
+==========================================
 */
 
   http.get("http://localhost:5000/api/rooms", () => {
@@ -213,7 +221,9 @@ ROOM API
   }),
 
   /*
+==========================================
 INQUIRY API
+==========================================
 */
 
   http.post("http://localhost:5000/api/inquiries", async ({ request }) => {
@@ -247,7 +257,9 @@ INQUIRY API
   }),
 
   /*
+==========================================
 CUSTOMER REQUEST API
+==========================================
 */
 
   http.get("http://localhost:5000/api/customer-requests", () => {
@@ -281,7 +293,9 @@ CUSTOMER REQUEST API
   }),
 
   /*
+==========================================
 TENANT CREATION API
+==========================================
 */
 
   http.post("http://localhost:5000/api/tenants", async ({ request }) => {
@@ -331,7 +345,9 @@ TENANT CREATION API
   }),
 
   /*
+==========================================
 PAYMENT API
+==========================================
 */
 
   http.patch("http://localhost:5000/api/payment/:id/confirm", () => {
@@ -389,8 +405,11 @@ PAYMENT API
   }),
 
   /*
+==========================================
 TENANT INFORMATION API
+==========================================
 GET /api/tenant/:tenantId
+==========================================
 */
 
   http.get("http://localhost:5000/api/tenant/:tenantId", ({ params }) => {
@@ -442,7 +461,9 @@ GET /api/tenant/:tenantId
   }),
 
   /*
+==========================================
 RISK ANALYSIS API
+==========================================
 */
 
   /*

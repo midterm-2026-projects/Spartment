@@ -1,89 +1,31 @@
-import {
-  beforeEach,
-  describe,
-  expect,
-  it,
-} from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { validateLoginCredentials } from "../validation/authValidation.js";
 
 describe("Authentication Validation", () => {
-  beforeEach(() => {});
-
-  it("should validate login credentials successfully", () => {
-    // Arrange
-    const email = "admin@email.com";
-    const password = "admin123";
-
-    // Act & Assert
-    expect(() =>
-      validateLoginCredentials(email, password)
-    ).not.toThrow();
+  it("should accept an email and valid password", () => {
+    expect(validateLoginCredentials("admin@email.com", "admin123")).toBe(true);
   });
 
-  it("should throw an error when the email is empty", () => {
-    // Arrange
-    const email = "";
-    const password = "admin123";
-
-    // Act & Assert
-    expect(() =>
-      validateLoginCredentials(email, password)
-    ).toThrow("Email is required.");
+  it("should accept a username and valid password", () => {
+    expect(validateLoginCredentials("administrator", "admin123")).toBe(true);
   });
 
-  it("should throw an error when the password is empty", () => {
-    // Arrange
-    const email = "admin@email.com";
-    const password = "";
-
-    // Act & Assert
-    expect(() =>
-      validateLoginCredentials(email, password)
-    ).toThrow("Password is required.");
+  it("should reject an empty identifier", () => {
+    expect(() => validateLoginCredentials("", "admin123")).toThrow(
+      "Email or username is required.",
+    );
   });
 
-  it("should throw an error when both email and password are empty", () => {
-    // Arrange
-    const email = "";
-    const password = "";
-
-    // Act & Assert
-    expect(() =>
-      validateLoginCredentials(email, password)
-    ).toThrow("Email is required.");
+  it("should reject an empty password", () => {
+    expect(() => validateLoginCredentials("admin@email.com", "")).toThrow(
+      "Password is required.",
+    );
   });
 
-  it("should throw an error when the email format is invalid", () => {
-    // Arrange
-    const email = "adminemail.com";
-    const password = "admin123";
-
-    // Act & Assert
-    expect(() =>
-      validateLoginCredentials(email, password)
-    ).toThrow("Invalid email format.");
-  });
-
-  it("should throw an error when the email contains only spaces", () => {
-    // Arrange
-    const email = "   ";
-    const password = "admin123";
-
-    // Act & Assert
-    expect(() =>
-      validateLoginCredentials(email, password)
-    ).toThrow("Email is required.");
-  });
-
-  it("should throw an error when the password contains only spaces", () => {
-    // Arrange
-    const email = "admin@email.com";
-    const password = "   ";
-
-    // Act & Assert
-    expect(() =>
-      validateLoginCredentials(email, password)
-    ).toThrow("Password is required.");
+  it("should reject a password shorter than eight characters", () => {
+    expect(() => validateLoginCredentials("admin@email.com", "short")).toThrow(
+      "Password must contain at least 8 characters.",
+    );
   });
 });

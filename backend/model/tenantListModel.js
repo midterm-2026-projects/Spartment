@@ -1,5 +1,13 @@
-export async function getTenantList() {
-  // Future database query here
+import { getTenants } from "./tenantModel.js";
 
-  return [];
+/*
+|--------------------------------------------------------------------------
+| Tenant List Model
+|--------------------------------------------------------------------------
+| Compatibility wrapper around tenantModel.js.
+|--------------------------------------------------------------------------
+*/
+
+export async function getTenantList() {
+  return getTenants();
 }
