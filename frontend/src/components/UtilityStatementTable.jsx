@@ -1,14 +1,6 @@
-export default function UtilityStatementTable({
-  utilityStatements,
-}) {
-  if (
-    utilityStatements.length === 0
-  ) {
-    return (
-      <p>
-        No utility statements found.
-      </p>
-    );
+export default function UtilityStatementTable({ utilityStatements }) {
+  if (utilityStatements.length === 0) {
+    return <p>No utility statements found.</p>;
   }
 
   return (
@@ -28,36 +20,21 @@ export default function UtilityStatementTable({
         </thead>
 
         <tbody>
-          {utilityStatements.map(
-            (statement, index) => (
-              <tr key={index}>
-                <td>{statement.period}</td>
+          {utilityStatements.map((statement, index) => (
+            <tr key={index}>
+              <td>{statement.period}</td>
 
-                <td>
-                  {statement.dueDate}
-                </td>
+              <td>{statement.dueDate}</td>
 
-                <td>
-                  ₱
-                  {
-                    statement.electricity
-                  }
-                </td>
+              <td>₱{statement.electricity}</td>
 
-                <td>
-                  ₱{statement.water}
-                </td>
+              <td>₱{statement.water}</td>
 
-                <td>
-                  ₱{statement.total}
-                </td>
+              <td>₱{statement.total}</td>
 
-                <td>
-                  {statement.status}
-                </td>
-              </tr>
-            )
-          )}
+              <td>{statement.status}</td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>

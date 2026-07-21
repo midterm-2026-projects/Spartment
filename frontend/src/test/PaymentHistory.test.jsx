@@ -1,56 +1,63 @@
 import { render, screen } from "@testing-library/react";
+
 import { describe, it, expect } from "vitest";
+
 import PaymentHistory from "../components/PaymentHistory";
 
 describe("PaymentHistory", () => {
   const payments = [
     {
-      month: "January",
-      amount: "₱5,000",
+      id: 1,
+
+      paymentDate: "2026-07-20",
+
+      amount: 6050,
+
+      paymentMethod: "Cash",
+
       status: "Paid",
     },
+
     {
-      month: "February",
-      amount: "₱5,000",
+      id: 2,
+
+      paymentDate: "2026-06-20",
+
+      amount: 5200,
+
+      paymentMethod: "Cash",
+
       status: "Pending",
     },
   ];
 
-  it("should render the Payment History section", () => {
-    // Arrange
+  it("should render payment history section", () => {
     render(<PaymentHistory payments={payments} />);
 
-    // Assert
-    expect(
-      screen.getByRole("heading", {
-        name: /payment history/i,
-      })
-    ).toBeInTheDocument();
-
-    expect(screen.getByText(/month/i)).toBeInTheDocument();
-    expect(screen.getByText(/amount/i)).toBeInTheDocument();
-    expect(screen.getByText(/status/i)).toBeInTheDocument();
+    expect(screen.getByText("Payment History")).toBeInTheDocument();
   });
 
-  it("should display payment history records", () => {
-    // Arrange
+  it("should display payment records correctly", () => {
     render(<PaymentHistory payments={payments} />);
 
-    // Assert
-    expect(screen.getByText("January")).toBeInTheDocument();
-    expect(screen.getByText("February")).toBeInTheDocument();
-    expect(screen.getAllByText("₱5,000")).toHaveLength(2);
+    expect(screen.getByText("7/20/2026")).toBeInTheDocument();
+
+    expect(screen.getByText("6/20/2026")).toBeInTheDocument();
+
+    expect(screen.getByText("₱6050")).toBeInTheDocument();
+
+    expect(screen.getByText("₱5200")).toBeInTheDocument();
+
+    expect(screen.getAllByText("Cash")).toHaveLength(2);
+
     expect(screen.getByText("Paid")).toBeInTheDocument();
+
     expect(screen.getByText("Pending")).toBeInTheDocument();
   });
 
-  it("should display a message when there is no payment history", () => {
-    // Arrange
+  it("should display empty state when no payments exist", () => {
     render(<PaymentHistory payments={[]} />);
 
-    // Assert
-    expect(
-      screen.getByText(/no payment history found/i)
-    ).toBeInTheDocument();
+    expect(screen.getByText("No payment history found.")).toBeInTheDocument();
   });
 });

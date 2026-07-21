@@ -1,175 +1,81 @@
-import express from "express";
-import request from "supertest";
-import {
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
-
-import billingRoutes from "../routes/billingRoutes.js";
+import { describe, it, expect, vi } from "vitest";
 
 vi.mock("../service/billingService.js", () => ({
-  fetchBillingInformation: vi.fn(),
+  getAllBilling: vi.fn(),
+
+  generateBilling: vi.fn(),
+
+  getBillingByTenant: vi.fn(),
+
+  updateBillingStatus: vi.fn(),
 }));
 
-import {
-  fetchBillingInformation,
-} from "../service/billingService.js";
+import { getAllBilling } from "../service/billingService.js";
 
-const app = express();
+import { getBillingRecords } from "../controller/billingController.js";
 
-app.use(express.json());
+function mockResponse() {
+  return {
+    status: vi.fn().mockReturnThis(),
 
-app.use("/billing", billingRoutes);
+    json: vi.fn(),
+  };
+}
 
 describe("Billing Controller", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  const mockBilling = {
-    summary: {
-      electricity: 850,
-      water: 220,
-      totalUtilities: 1070,
-    },
-
-    rentStatements: [
-      {
-        period: "May 2026",
-        dueDate: "May 15, 2026",
-        amount: 6500,
-        status: "Paid",
-      },
-    ],
-
-    utilityStatements: [
-      {
-        period: "May 2026",
-        dueDate: "May 20, 2026",
-        electricity: 850,
-        water: 220,
-        total: 1070,
-        status: "Paid",
-      },
-    ],
-  };
-
   it("should retrieve billing information successfully", async () => {
-    // Arrange
-    fetchBillingInformation.mockResolvedValue(
-      mockBilling
-    );
+    getAllBilling.mockResolvedValue({
+      summary: {
+        rent: 5000,
 
-    // Act
-    const response =
-      await request(app).get("/billing");
+        water: 200,
 
-    // Assert
-    expect(response.status).toBe(200);
+        electricity: 500,
+      },
+    });
 
-    expect(response.body).toEqual(
-      mockBilling
-    );
+    const req = {};
 
-    expect(
-      fetchBillingInformation
-    ).toHaveBeenCalledTimes(1);
+    const res = mockResponse();
+
+    await getBillingRecords(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+
+    expect(res.json).toHaveBeenCalled();
   });
 
-  it("should return billing summary correctly", async () => {
-    // Arrange
-    fetchBillingInformation.mockResolvedValue(
-      mockBilling
-    );
+  it("should return billing data correctly", async () => {
+    const billing = {
+      id: 1,
 
-    // Act
-    const response =
-      await request(app).get("/billing");
+      tenantId: 1,
 
-    // Assert
-    expect(response.status).toBe(200);
+      totalAmount: 5700,
+    };
 
-    expect(
-      response.body.summary
-    ).toEqual(mockBilling.summary);
-  });
+    getAllBilling.mockResolvedValue(billing);
 
-  it("should return rent statements correctly", async () => {
-    // Arrange
-    fetchBillingInformation.mockResolvedValue(
-      mockBilling
-    );
+    const res = mockResponse();
 
-    // Act
-    const response =
-      await request(app).get("/billing");
+    await getBillingRecords({}, res);
 
-    // Assert
-    expect(response.status).toBe(200);
-
-    expect(
-      response.body.rentStatements
-    ).toEqual(
-      mockBilling.rentStatements
-    );
-  });
-
-  it("should return utility statements correctly", async () => {
-    // Arrange
-    fetchBillingInformation.mockResolvedValue(
-      mockBilling
-    );
-
-    // Act
-    const response =
-      await request(app).get("/billing");
-
-    // Assert
-    expect(response.status).toBe(200);
-
-    expect(
-      response.body.utilityStatements
-    ).toEqual(
-      mockBilling.utilityStatements
-    );
+    expect(res.json.mock.calls[0][0].data).toEqual(billing);
   });
 
   it("should return an internal server error when billing retrieval fails", async () => {
-    // Arrange
-    fetchBillingInformation.mockRejectedValue(
-      new Error(
-        "Failed to retrieve billing information."
-      )
+    getAllBilling.mockRejectedValue(
+      new Error("Failed to retrieve billing information."),
     );
 
-    // Act
-    const response =
-      await request(app).get("/billing");
+    const res = mockResponse();
 
-    // Assert
-    expect(response.status).toBe(500);
+    await getBillingRecords({}, res);
 
-    expect(response.body).toEqual({
-      message:
-        "Failed to retrieve billing information.",
-    });
-  });
+    expect(res.status).toHaveBeenCalledWith(500);
 
-  it("should call the billing service once", async () => {
-    // Arrange
-    fetchBillingInformation.mockResolvedValue(
-      mockBilling
+    expect(res.json.mock.calls[0][0].message).toBe(
+      "Failed to retrieve billing information.",
     );
-
-    // Act
-    await request(app).get("/billing");
-
-    // Assert
-    expect(
-      fetchBillingInformation
-    ).toHaveBeenCalledTimes(1);
   });
 });

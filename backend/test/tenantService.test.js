@@ -1,5 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("../model/tenantModel.js", () => ({
+  getTenants: vi.fn(),
+
+  getTenantById: vi.fn(),
+}));
+
+import { getTenants, getTenantById } from "../model/tenantModel.js";
+
 import {
   fetchTenantInformation,
   findTenantByName,
@@ -17,25 +25,25 @@ describe("Tenant Service", () => {
   });
 
   it("should retrieve tenant information successfully", async () => {
-    getTenants.mockResolvedValue([
-      {
-        id: 1,
-        name: "Juan Dela Cruz",
-        email: "juan@gmail.com",
-        roomNumber: "101",
-      },
-    ]);
+    getTenantById.mockResolvedValue({
+      id: 1,
+
+      fullName: "Juan Dela Cruz",
+
+      email: "juan@gmail.com",
+    });
 
     const result = await fetchTenantInformation(1);
 
-    expect(result.name).toBe("Juan Dela Cruz");
+    expect(result.fullName).toBe("Juan Dela Cruz");
   });
 
   it("should search tenant by name successfully", async () => {
     getTenants.mockResolvedValue([
       {
         id: 1,
-        name: "Juan Dela Cruz",
+
+        fullName: "Juan Dela Cruz",
       },
     ]);
 

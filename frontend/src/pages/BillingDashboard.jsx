@@ -1,40 +1,30 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
-import { getBillingInformation } from "../api/billingApi";
-
-import BillingSummaryCards from "../components/BillingSummaryCards";
-import RentStatementTable from "../components/RentStatementTable";
-import UtilityStatementTable from "../components/UtilityStatementTable";
+import useBilling from "../hooks/useBilling";
 
 import Loading from "../components/Loading";
+
 import ErrorMessage from "../components/ErrorMessage";
+
 import EmptyState from "../components/EmptyState";
 
+import BillingSummaryCards from "../components/BillingSummaryCards";
+
+import PaymentHistory from "../components/PaymentHistory";
+
 export default function BillingDashboard() {
-  const [billing, setBilling] =
-    useState(null);
+  const {
+    billing,
 
-  const [loading, setLoading] =
-    useState(true);
+    loading,
 
-  const [error, setError] =
-    useState("");
+    error,
+
+    fetchTenantBilling,
+  } = useBilling();
 
   useEffect(() => {
-    async function loadBilling() {
-      try {
-        const data =
-          await getBillingInformation();
-
-        setBilling(data);
-      } catch (error) {
-        setError(error.message);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadBilling();
+    fetchTenantBilling(1).catch(() => {});
   }, []);
 
   if (loading) {
@@ -42,7 +32,7 @@ export default function BillingDashboard() {
   }
 
   if (error) {
-    return <ErrorMessage />;
+    return <ErrorMessage message={error} />;
   }
 
   if (!billing) {
@@ -51,21 +41,11 @@ export default function BillingDashboard() {
 
   return (
     <div>
-      <BillingSummaryCards
-        summary={billing.summary}
-      />
+      <h1>Billing Dashboard</h1>
 
-      <RentStatementTable
-        rentStatements={
-          billing.rentStatements
-        }
-      />
+      <BillingSummaryCards billing={billing} />
 
-      <UtilityStatementTable
-        utilityStatements={
-          billing.utilityStatements
-        }
-      />
+      <PaymentHistory payments={billing.payments || []} />
     </div>
   );
 }

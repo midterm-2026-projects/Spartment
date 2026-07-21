@@ -1,243 +1,83 @@
-import {
-  describe,
-  it,
-  expect,
-  vi,
-} from "vitest";
+import { render, screen } from "@testing-library/react";
 
+import { describe, it, expect, vi } from "vitest";
 
-import {
-  render,
-  screen,
-} from "@testing-library/react";
+import TenantCreation from "../pages/TenantCreation";
 
+import useTenantCreation from "../hooks/useTenantCreation";
 
-import TenantCreation
-from "../pages/TenantCreation";
+vi.mock("../hooks/useTenantCreation", () => ({
+  default: vi.fn(),
+}));
 
+describe("Tenant Creation Page", () => {
+  it("should display tenant credentials and generated billing after creation", () => {
+    useTenantCreation.mockReturnValue({
+      registerTenant: vi.fn(),
 
-import useTenantCreation
-from "../hooks/useTenantCreation";
+      tenant: {
+        email: "juan101@email.com",
 
+        password: "Tenant123",
+      },
 
+      billing: {
+        totalAmount: 5200,
 
-vi.mock(
-  "../hooks/useTenantCreation",
-  () => ({
+        status: "Pending",
+      },
 
-    default:
-      vi.fn(),
+      loading: false,
 
-  })
-);
+      error: null,
+    });
 
+    render(<TenantCreation />);
 
+    expect(screen.getByText("Tenant Creation")).toBeInTheDocument();
 
-describe(
-  "Tenant Creation Page",
-  () => {
+    expect(screen.getByText("juan101@email.com")).toBeInTheDocument();
 
+    expect(screen.getByText("Tenant123")).toBeInTheDocument();
 
+    expect(screen.getByText(/5200/)).toBeInTheDocument();
 
-    it(
-      "should display tenant credentials after creation",
-      () => {
+    expect(screen.getByText("Pending")).toBeInTheDocument();
+  });
 
+  it("should display loading state", () => {
+    useTenantCreation.mockReturnValue({
+      registerTenant: vi.fn(),
 
-        useTenantCreation.mockReturnValue({
+      tenant: null,
 
-          createTenant:
-            vi.fn(),
+      billing: null,
 
+      loading: true,
 
-          credentials:
-            null,
+      error: null,
+    });
 
+    render(<TenantCreation />);
 
-          tenant: {
+    expect(screen.getByText(/loading/i)).toBeInTheDocument();
+  });
 
-            email:
-              "juan101@email.com",
+  it("should display error message", () => {
+    useTenantCreation.mockReturnValue({
+      registerTenant: vi.fn(),
 
+      tenant: null,
 
-            temporaryPassword:
-              "Tenant123",
+      billing: null,
 
-          },
+      loading: false,
 
+      error: "Failed to create tenant.",
+    });
 
-          loading:
-            false,
+    render(<TenantCreation />);
 
-
-          error:
-            null,
-
-
-        });
-
-
-
-        render(
-          <TenantCreation />
-        );
-
-
-
-        expect(
-
-          screen.getByText(
-            "Tenant Creation"
-          )
-
-        )
-        .toBeInTheDocument();
-
-
-
-
-        expect(
-
-          screen.getByText(
-            "juan101@email.com"
-          )
-
-        )
-        .toBeInTheDocument();
-
-
-
-
-        expect(
-
-          screen.getByText(
-            "Tenant123"
-          )
-
-        )
-        .toBeInTheDocument();
-
-
-
-      }
-
-    );
-
-
-
-
-
-    it(
-      "should display loading state",
-      () => {
-
-
-        useTenantCreation.mockReturnValue({
-
-          createTenant:
-            vi.fn(),
-
-
-          credentials:
-            null,
-
-
-          tenant:
-            null,
-
-
-          loading:
-            true,
-
-
-          error:
-            null,
-
-
-        });
-
-
-
-        render(
-          <TenantCreation />
-        );
-
-
-
-        expect(
-
-          screen.getByText(
-            /loading/i
-          )
-
-        )
-        .toBeInTheDocument();
-
-
-
-      }
-
-    );
-
-
-
-
-
-
-    it(
-      "should display error message when tenant creation fails",
-      () => {
-
-
-        useTenantCreation.mockReturnValue({
-
-          createTenant:
-            vi.fn(),
-
-
-          credentials:
-            null,
-
-
-          tenant:
-            null,
-
-
-          loading:
-            false,
-
-
-          error:
-            "Failed to create tenant.",
-
-
-        });
-
-
-
-        render(
-          <TenantCreation />
-        );
-
-
-
-        expect(
-
-          screen.getByText(
-            "Failed to create tenant."
-          )
-
-        )
-        .toBeInTheDocument();
-
-
-
-      }
-
-    );
-
-
-
-  }
-
-);
+    expect(screen.getByText("Failed to create tenant.")).toBeInTheDocument();
+  });
+});

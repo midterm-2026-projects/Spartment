@@ -1,116 +1,56 @@
 import AddTenantModal from "../components/AddTenantModal";
-
 import CredentialDisplay from "../components/CredentialDisplay";
-
 import Loading from "../components/Loading";
-
 import ErrorMessage from "../components/ErrorMessage";
 
 import useTenantCreation from "../hooks/useTenantCreation";
 
-
-
-export default function TenantCreation(){
-
-
+export default function TenantCreation() {
   const {
-
-    credentials,
+    registerTenant,
 
     tenant,
+
+    billing,
 
     loading,
 
     error,
-
-    createTenant
-
-
   } = useTenantCreation();
 
-
-
-
   if (loading) {
-
     return <Loading />;
-
   }
 
+  const credentials = tenant && {
+    email: tenant.email,
 
-
-
-  const displayCredentials = credentials || (
-
-    tenant && {
-
-      email:
-        tenant.email,
-
-
-      password:
-        tenant.password ||
-        tenant.temporaryPassword,
-
-    }
-
-  );
-
-
-
+    password: tenant.password || tenant.temporaryPassword,
+  };
 
   return (
-
     <div>
+      <h1>Tenant Creation</h1>
 
+      {error && <ErrorMessage message={error} />}
 
-      <h1>
-        Tenant Creation
-      </h1>
+      <AddTenantModal onSubmit={registerTenant} />
 
+      {credentials && <CredentialDisplay credentials={credentials} />}
 
+      {billing && (
+        <div>
+          <h2>Initial Billing Created</h2>
 
+          <p>
+            Total: <span>₱{billing.totalAmount}</span>
+          </p>
 
-      {
-        error && (
-
-          <ErrorMessage
-
-            message={error}
-
-          />
-
-        )
-      }
-
-
-
-
-      <AddTenantModal
-
-        onSubmit={createTenant}
-
-      />
-
-
-
-
-      {
-        displayCredentials && (
-
-          <CredentialDisplay
-
-            credentials={displayCredentials}
-
-          />
-
-        )
-      }
-
-
-
+          <p>
+            Status: <span>{billing.status}</span>
+          </p>
+        </div>
+      )}
     </div>
-
   );
-
 }

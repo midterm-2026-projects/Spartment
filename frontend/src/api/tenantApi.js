@@ -1,11 +1,13 @@
-import { fetchTenantInformation } from "../../../backend/service/tenantService.js";
+import axios from "axios";
+
+const API_URL = "http://localhost:5000/api/tenant";
 
 export async function getTenantInformation(tenantId) {
   try {
-    const tenant = await fetchTenantInformation(tenantId);
+    const response = await axios.get(`${API_URL}/${tenantId}`);
 
-    return tenant;
+    return response.data;
   } catch (error) {
-    throw new Error(error.message);
+    throw new Error("Something went wrong.");
   }
 }

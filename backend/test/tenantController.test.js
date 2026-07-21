@@ -1,23 +1,13 @@
-import {
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
-
-import request from "supertest";
-import express from "express";
-
-import router from "../routes/tenantRoutes.js";
-
-const app = express();
-
-app.use(express.json());
-app.use("/api/tenants", router);
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("../service/tenantService.js", () => ({
   createTenantAccount: vi.fn(),
+
   updateTenantPassword: vi.fn(),
+}));
+
+vi.mock("../service/billingService.js", () => ({
+  generateBilling: vi.fn(),
 }));
 
 import {
@@ -25,81 +15,167 @@ import {
   updateTenantPassword,
 } from "../service/tenantService.js";
 
+import { generateBilling } from "../service/billingService.js";
+
+import {
+  createTenant,
+  changeTenantPassword,
+} from "../controller/tenantController.js";
+
+function responseMock() {
+  return {
+    status: vi.fn().mockReturnThis(),
+
+    json: vi.fn(),
+  };
+}
+
 describe("Tenant Controller API", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("should create tenant account successfully", async () => {
-    createTenantAccount.mockResolvedValue({
+    const mockTenant = {
       id: 1,
+
       fullName: "Juan Dela Cruz",
+
       email: "juan@gmail.com",
-      roomNumber: "101",
-    });
 
-    const response = await request(app)
-      .post("/api/tenants")
-      .send({
-        fullName: "Juan Dela Cruz",
-        email: "juan@gmail.com",
-        roomNumber: "101",
-        password: "123456",
-      });
+      contact: "09123456789",
 
-    expect(response.status)
-      .toBe(201);
+      room: "101",
 
-    expect(response.body.message)
-      .toBe(
-        "Tenant created successfully"
-      );
+      username: "juan101",
+    };
 
-    expect(response.body.data.email)
-      .toBe(
-        "juan@gmail.com"
-      );
-  });
-
-
-  it("should update tenant password successfully", async () => {
-    updateTenantPassword.mockResolvedValue({
+    const mockBilling = {
       id: 1,
-      password: "newPassword",
-    });
 
-    const response = await request(app)
-      .patch("/api/tenants/1/password")
-      .send({
-        password: "newPassword",
-      });
+      tenantId: 1,
 
-    expect(response.status)
-      .toBe(200);
+      billingType: "initial",
 
-    expect(response.body.message)
-      .toBe(
-        "Password updated successfully"
-      );
-  });
+      rentAmount: 5000,
 
+      waterBill: 200,
 
-  it("should return error when tenant creation fails", async () => {
-    createTenantAccount.mockRejectedValue(
-      new Error(
-        "Tenant already exists"
-      )
+      electricityBill: 0,
+
+      totalAmount: 5200,
+
+      status: "Pending",
+    };
+
+    createTenantAccount.mockResolvedValue(mockTenant);
+
+    generateBilling.mockResolvedValue(mockBilling);
+
+    const req = {
+      body: {
+        fullName: "Juan Dela Cruz",
+
+        email: "juan@gmail.com",
+
+        contact: "09123456789",
+
+        room: "101",
+
+        username: "juan101",
+      },
+    };
+
+    const res = responseMock();
+
+    await createTenant(
+      req,
+
+      res,
     );
 
-    const response = await request(app)
-      .post("/api/tenants")
-      .send({
-        fullName: "Juan Dela Cruz",
-        email: "juan@gmail.com",
-      });
+    expect(createTenantAccount).toHaveBeenCalledTimes(1);
 
-    expect(response.status)
-      .toBe(400);
+    expect(generateBilling).toHaveBeenCalledWith({
+      tenantId: 1,
 
-    expect(response.body.message)
-      .toBe(
-        "Tenant already exists"
-      );
+      billingType: "initial",
+    });
+
+    expect(res.status).toHaveBeenCalledWith(201);
+
+    const response = res.json.mock.calls[0][0];
+
+    expect(response.message).toBe("Tenant created successfully");
+
+    expect(response.data.tenant.email).toBe("juan@gmail.com");
+
+    expect(response.data.billing.totalAmount).toBe(5200);
+
+    expect(response.data.billing.status).toBe("Pending");
+  });
+
+  it("should update tenant password successfully", async () => {
+    const updatedTenant = {
+      id: 1,
+
+      password: "newpass",
+    };
+
+    updateTenantPassword.mockResolvedValue(updatedTenant);
+
+    const req = {
+      params: {
+        id: 1,
+      },
+
+      body: {
+        password: "newpass",
+      },
+    };
+
+    const res = responseMock();
+
+    await changeTenantPassword(
+      req,
+
+      res,
+    );
+
+    expect(updateTenantPassword).toHaveBeenCalledWith(
+      1,
+
+      "newpass",
+    );
+
+    expect(res.status).toHaveBeenCalledWith(200);
+
+    const response = res.json.mock.calls[0][0];
+
+    expect(response.message).toBe("Password updated successfully");
+
+    expect(response.data.password).toBe("newpass");
+  });
+
+  it("should return error when tenant creation fails", async () => {
+    createTenantAccount.mockRejectedValue(new Error("Tenant already exists."));
+
+    const req = {
+      body: {},
+    };
+
+    const res = responseMock();
+
+    await createTenant(
+      req,
+
+      res,
+    );
+
+    expect(res.status).toHaveBeenCalledWith(400);
+
+    const response = res.json.mock.calls[0][0];
+
+    expect(response.message).toBe("Tenant already exists.");
   });
 });

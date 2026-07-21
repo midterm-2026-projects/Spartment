@@ -1,31 +1,73 @@
-export default function PaymentHistory({
-  payments = [],
-}) {
+export default function PaymentHistory({ payments = [] }) {
+  const formatDate = (date) => {
+    if (!date) {
+      return "N/A";
+    }
+
+    const converted = new Date(date);
+
+    return `${converted.getMonth() + 1}/${converted.getDate()}/${converted.getFullYear()}`;
+  };
+
+  const statusStyle = {
+    Paid: "bg-green-100 text-green-700",
+
+    Pending: "bg-yellow-100 text-yellow-700",
+
+    Late: "bg-red-100 text-red-700",
+  };
+
   return (
     <div className="bg-white rounded-xl shadow p-6">
-      <h2>Payment History</h2>
+      <h2 className="font-bold text-xl mb-4">Payment History</h2>
 
       <table className="w-full">
         <thead>
           <tr>
-            <th>Month</th>
-            <th>Amount</th>
-            <th>Status</th>
+            <th className="text-left">Date</th>
+
+            <th className="text-left">Amount</th>
+
+            <th className="text-left">Method</th>
+
+            <th className="text-left">Status</th>
           </tr>
         </thead>
 
         <tbody>
           {payments.length > 0 ? (
-            payments.map((payment) => (
-              <tr key={payment.month}>
-                <td>{payment.month}</td>
-                <td>{payment.amount}</td>
-                <td>{payment.status}</td>
+            payments.map((payment, index) => (
+              <tr key={payment.id || index}>
+                <td>{formatDate(payment.paymentDate)}</td>
+
+                <td>₱{payment.amount ?? 0}</td>
+
+                <td>{payment.paymentMethod || "Cash"}</td>
+
+                <td>
+                  <span
+                    className={`
+                      px-3 
+                      py-1 
+                      rounded-full 
+                      text-sm
+                      font-semibold
+                      ${
+                        statusStyle[payment.status] ||
+                        "bg-gray-100 text-gray-700"
+                      }
+                    `}
+                  >
+                    {payment.status || "Pending"}
+                  </span>
+                </td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan={3}>No payment history found.</td>
+              <td colSpan="4" className="text-center py-4">
+                No payment history found.
+              </td>
             </tr>
           )}
         </tbody>

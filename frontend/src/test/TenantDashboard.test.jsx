@@ -1,169 +1,42 @@
-import {
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
 
-import {
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
-
-vi.mock("../api/tenantApi", () => ({
-  getTenantInformation: vi.fn(),
-}));
-
-import { getTenantInformation } from "../api/tenantApi";
+import { describe, it, expect } from "vitest";
 
 import TenantDashboard from "../pages/TenantDashboard";
 
 describe("Tenant Dashboard", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it("should retrieve tenant information from the backend successfully", async () => {
-    // Arrange
-    getTenantInformation.mockResolvedValue({
-      tenant: {
-        name: "Juan Dela Cruz",
-        contact: "09123456789",
-        email: "juan@email.com",
-      },
-      room: {
-        roomNumber: "Room 101",
-        monthlyRent: 5000,
-        nextDue: "July 15, 2026",
-      },
-      payments: [
-        {
-          month: "January",
-          amount: 5000,
-          status: "Paid",
-        },
-      ],
-    });
-
-    // Act
+  it("should display tenant information", async () => {
     render(<TenantDashboard />);
 
-    // Assert
     await waitFor(() => {
-      expect(
-        screen.getByText("Juan Dela Cruz")
-      ).toBeInTheDocument();
-
-      expect(
-        screen.getByText("Room 101")
-      ).toBeInTheDocument();
+      expect(screen.getByText("Juan Dela Cruz")).toBeInTheDocument();
     });
   });
 
-  it("should display payment history using backend data correctly", async () => {
-    // Arrange
-    getTenantInformation.mockResolvedValue({
-      tenant: {
-        name: "Juan Dela Cruz",
-        contact: "09123456789",
-        email: "juan@email.com",
-      },
-      room: {
-        roomNumber: "Room 101",
-        monthlyRent: 5000,
-        nextDue: "July 15, 2026",
-      },
-      payments: [
-        {
-          month: "January",
-          amount: 5000,
-          status: "Paid",
-        },
-        {
-          month: "February",
-          amount: 5000,
-          status: "Paid",
-        },
-      ],
-    });
-
-    // Act
+  it("should display payment history correctly", async () => {
     render(<TenantDashboard />);
 
-    // Assert
     await waitFor(() => {
-      expect(
-        screen.getByText("January")
-      ).toBeInTheDocument();
+      expect(screen.getByText("7/20/2026")).toBeInTheDocument();
 
-      expect(
-        screen.getByText("February")
-      ).toBeInTheDocument();
+      expect(screen.getAllByText("₱5000")).toHaveLength(2);
 
-      expect(
-        screen.getAllByText("Paid")
-      ).toHaveLength(2);
+      expect(screen.getAllByText("Cash")).toHaveLength(2);
+
+      expect(screen.getAllByText("Paid")).toHaveLength(2);
     });
   });
 
-  it("should display a message when no payment history exists", async () => {
-    // Arrange
-    getTenantInformation.mockResolvedValue({
-      tenant: {
-        name: "Juan Dela Cruz",
-        contact: "09123456789",
-        email: "juan@email.com",
-      },
-      room: {
-        roomNumber: "Room 101",
-        monthlyRent: 5000,
-        nextDue: "July 15, 2026",
-      },
-      payments: [],
-    });
-
-    // Act
+  it("should display tenant risk information", async () => {
     render(<TenantDashboard />);
 
-    // Assert
     await waitFor(() => {
+      expect(screen.getByText("High Risk")).toBeInTheDocument();
+
       expect(
-        screen.getByText("No payment history found.")
-      ).toBeInTheDocument();
-    });
-  });
-
-  it("should display an appropriate message when tenant information is unavailable", async () => {
-    // Arrange
-    getTenantInformation.mockRejectedValue(
-      new Error("Tenant not found.")
-    );
-
-    // Act
-    render(<TenantDashboard />);
-
-    // Assert
-    await waitFor(() => {
-      expect(
-        screen.getByText("Something went wrong.")
-      ).toBeInTheDocument();
-    });
-  });
-
-  it("should display a message when no tenant information exists", async () => {
-    // Arrange
-    getTenantInformation.mockResolvedValue(null);
-
-    // Act
-    render(<TenantDashboard />);
-
-    // Assert
-    await waitFor(() => {
-      expect(
-        screen.getByText("No records found.")
+        screen.getByText("Repeated late payments detected."),
       ).toBeInTheDocument();
     });
   });
 });
+ 

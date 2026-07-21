@@ -1,71 +1,53 @@
-import {
- render,
- screen,
-} from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 
-import {
- describe,
- expect,
- it,
-} from "vitest";
+import { describe, it, expect } from "vitest";
 
 import PaymentStatusCard from "../components/PaymentStatusCard";
 
+describe("Payment Status Card", () => {
+  it("should display payment status information correctly", () => {
+    const paymentStatus = {
+      collectedRevenue: 50000,
 
-describe("Payment Status Card",()=>{
+      pendingPayments: 5,
 
+      latePayments: 2,
+    };
 
-it("should display payment status information correctly",()=>{
+    render(<PaymentStatusCard metrics={paymentStatus} />);
 
+    expect(screen.getByText("Payment Status")).toBeInTheDocument();
 
-// Arrange
+    expect(screen.getByText(/Collected Revenue/)).toBeInTheDocument();
 
-render(
- <PaymentStatusCard
-  paymentStatus={{
-    paid:20,
-    pending:5,
-    overdue:2,
-  }}
- />
-);
+    expect(screen.getByText("₱50000")).toBeInTheDocument();
 
+    expect(screen.getByText(/Pending Payments/)).toBeInTheDocument();
 
-// Assert
+    expect(screen.getByText("5")).toBeInTheDocument();
 
-expect(
- screen.getByText(
-  "Payment Status"
- )
-)
-.toBeInTheDocument();
+    expect(screen.getByText(/Late Payments/)).toBeInTheDocument();
 
+    expect(screen.getByText("2")).toBeInTheDocument();
+  });
 
-expect(
- screen.getByText(
-  "Paid: 20"
- )
-)
-.toBeInTheDocument();
+  it("should display zero values correctly", () => {
+    render(
+      <PaymentStatusCard
+        metrics={{
+          collectedRevenue: 0,
 
+          pendingPayments: 0,
 
-expect(
- screen.getByText(
-  "Pending: 5"
- )
-)
-.toBeInTheDocument();
+          latePayments: 0,
+        }}
+      />,
+    );
 
+    expect(screen.getByText("₱0")).toBeInTheDocument();
 
-expect(
- screen.getByText(
-  "Overdue: 2"
- )
-)
-.toBeInTheDocument();
+    expect(screen.getByText(/Pending Payments/)).toBeInTheDocument();
 
-
-});
-
-
+    expect(screen.getByText(/Late Payments/)).toBeInTheDocument();
+  });
 });

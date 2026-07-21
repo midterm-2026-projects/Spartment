@@ -9,6 +9,8 @@ export default function useTenantCreation() {
 
   const [tenant, setTenant] = useState(null);
 
+  const [billing, setBilling] = useState(null);
+
   const registerTenant = async (tenantData) => {
     try {
       setLoading(true);
@@ -17,7 +19,22 @@ export default function useTenantCreation() {
 
       const response = await createTenant(tenantData);
 
-      setTenant(response.tenant);
+      /*
+      Backend response:
+
+      {
+        message,
+        data:{
+          tenant,
+          billing
+        }
+      }
+
+      */
+
+      setTenant(response.data.tenant);
+
+      setBilling(response.data.billing);
 
       return response;
     } catch (error) {
@@ -33,6 +50,8 @@ export default function useTenantCreation() {
     registerTenant,
 
     tenant,
+
+    billing,
 
     loading,
 
