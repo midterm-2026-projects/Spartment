@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 import { getUserByIdentifier, getUserById } from "../model/authModel.js";
+import { getTenantByUserId } from "../model/tenantModel.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -88,10 +89,22 @@ export async function loginUser({ identifier, password }) {
 
   const token = generateAccessToken(user);
 
+  const safeUser = sanitizeUser(user);
+  if (String(user.role).toLowerCase() === "tenant") {
+    try {
+      const tenant = await getTenantByUserId(user.id);
+      safeUser.tenantId = tenant?.id ?? tenant?.tenant_id ?? null;
+    } catch {
+      // Authentication remains valid if an older tenant record has not yet
+      // been linked. The portal will show a clear missing-profile message.
+      safeUser.tenantId = null;
+    }
+  }
+
   return {
     token,
     tokenType: "Bearer",
-    user: sanitizeUser(user),
+    user: safeUser,
   };
 }
 

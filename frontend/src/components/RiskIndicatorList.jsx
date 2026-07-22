@@ -5,18 +5,22 @@ export default function RiskIndicatorList({ indicators = [] }) {
 
       {indicators.length > 0 ? (
         <ul className="space-y-3">
-          {indicators.map((item, index) => (
+          {indicators.map((indicator, index) => (
             <li
               key={index}
               className="
-                    bg-red-50
-                    text-red-700
-                    px-4
-                    py-3
-                    rounded-lg
-                  "
+                      bg-red-50
+                      text-red-700
+                      px-4
+                      py-3
+                      rounded-lg
+                    "
             >
-              {item}
+              {typeof indicator === "string"
+                ? indicator
+                : (indicator.condition ??
+                  indicator.description ??
+                  "Unknown risk indicator")}
             </li>
           ))}
         </ul>

@@ -1,5 +1,5 @@
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+  import.meta.env.VITE_API_BASE_URL || "/api";
 
 const API_URL = `${API_BASE_URL}/rooms`;
 
@@ -26,6 +26,7 @@ async function parseResponse(response, fallbackMessage) {
 export async function getRooms() {
   const response = await fetch(API_URL, {
     method: "GET",
+    headers: getAuthHeaders(),
   });
 
   return parseResponse(response, "Failed to retrieve rooms.");
@@ -44,14 +45,21 @@ export async function getRoomById(roomId) {
 }
 
 export async function getAvailableRooms() {
-  const result = await getRooms();
+  const response = await fetch(`${API_URL}/available`, {
+    method: "GET",
+  });
+
+  const result = await parseResponse(
+    response,
+    "Failed to retrieve available rooms.",
+  );
 
   const rooms = Array.isArray(result) ? result : result?.data || [];
 
   return rooms.filter((room) => {
-    const status = String(room.status || "").toLowerCase();
+    const status = String(room.status || "").trim().toLowerCase();
 
-    return status === "available";
+    return status === "available" || status === "vacant";
   });
 }
 
@@ -70,4 +78,15 @@ export async function updateRoom(roomId, data) {
   });
 
   return parseResponse(response, "Failed to update room.");
+}
+
+export async function createRoom(data) {
+  const response = await fetch(API_URL, { method: "POST", headers: { "Content-Type": "application/json", ...getAuthHeaders() }, body: JSON.stringify(data) });
+  return parseResponse(response, "Failed to create room.");
+}
+
+export async function getPublicRoomCatalogue() {
+  const response = await fetch(`${API_URL}/available`, { method: "GET" });
+  const result = await parseResponse(response, "Failed to retrieve room catalogue.");
+  return Array.isArray(result) ? result : result?.data || [];
 }

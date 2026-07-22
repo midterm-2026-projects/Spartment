@@ -1,7 +1,12 @@
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+  import.meta.env.VITE_API_BASE_URL || "/api";
 
 const API_URL = `${API_BASE_URL}/inquiries`;
+
+function getAuthHeaders() {
+  const token = localStorage.getItem("token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 async function parseResponse(response, fallbackMessage) {
   const result = await response.json().catch(() => null);
@@ -37,4 +42,10 @@ export async function submitInquiry(data) {
   });
 
   return parseResponse(response, "Failed to submit inquiry.");
+}
+
+export async function getInquiries() {
+  const response = await fetch(API_URL, { headers: getAuthHeaders() });
+  const result = await parseResponse(response, "Failed to retrieve inquiries.");
+  return Array.isArray(result) ? result : result?.data || [];
 }

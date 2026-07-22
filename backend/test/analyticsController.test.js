@@ -1,161 +1,78 @@
 import express from "express";
 import request from "supertest";
 
-import {
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
+vi.mock("../service/analyticsService.js", () => ({
+  fetchAnalyticsData: vi.fn(),
+}));
 
-vi.mock(
- "../service/analyticsService.js",
- ()=>({
-   fetchAnalyticsData:
-      vi.fn(),
- })
-);
+vi.mock("../middleware/authMiddleware.js", () => ({
+  default: (req, res, next) => next(),
+}));
 
+vi.mock("../middleware/roleMiddleware.js", () => ({
+  requireAdmin: (req, res, next) => next(),
+}));
 
-import {
- fetchAnalyticsData,
-} from "../service/analyticsService.js";
-
+import { fetchAnalyticsData } from "../service/analyticsService.js";
 
 import analyticsRoutes from "../routes/analyticsRoutes.js";
 
+const app = express();
 
-const app =
- express();
+app.use(express.json());
 
+app.use("/analytics", analyticsRoutes);
 
-app.use(
- express.json()
-);
+describe("Analytics Controller", () => {
+  const mockResponse = {
+    totalRevenue: 80000,
 
+    totalTenants: 2,
 
-app.use(
- "/analytics",
- analyticsRoutes
-);
+    occupancyRate: 50,
 
+    paymentStatus: {
+      paid: 1,
+      pending: 1,
+      overdue: 1,
+    },
 
+    revenueTrend: [],
 
-describe(
-"Analytics Controller",
-()=>{
+    recommendations: [],
+  };
 
+  it("should retrieve analytics successfully", async () => {
+    fetchAnalyticsData.mockResolvedValue(mockResponse);
 
-beforeEach(()=>{
- vi.clearAllMocks();
-});
+    const response = await request(app).get("/analytics");
 
+    expect(response.status).toBe(200);
 
+    expect(response.body).toEqual({
+      success: true,
 
-const mockResponse = {
+      data: mockResponse,
+    });
 
- totalRevenue:80000,
+    expect(fetchAnalyticsData).toHaveBeenCalledTimes(1);
+  });
 
- totalTenants:2,
+  it("should return error when analytics retrieval fails", async () => {
+    fetchAnalyticsData.mockRejectedValue(
+      new Error("Failed to retrieve analytics information."),
+    );
 
- occupancyRate:50,
+    const response = await request(app).get("/analytics");
 
- paymentStatus:{
-  paid:1,
-  pending:1,
-  overdue:1,
- },
+    expect(response.status).toBe(500);
 
- revenueTrend:[],
+    expect(response.body).toEqual({
+      success: false,
 
- recommendations:[],
-};
-
-
-
-it(
-"should retrieve analytics successfully",
-async()=>{
-
-
-// Arrange
-
-fetchAnalyticsData.mockResolvedValue(
- mockResponse
-);
-
-
-// Act
-
-const response =
- await request(app)
- .get("/analytics");
-
-
-// Assert
-
-expect(
- response.status
-)
-.toBe(200);
-
-
-expect(
- response.body
-)
-.toEqual(
- mockResponse
-);
-
-
-expect(
- fetchAnalyticsData
-)
-.toHaveBeenCalledTimes(1);
-
-
-});
-
-
-
-it(
-"should return error when analytics retrieval fails",
-async()=>{
-
-
-fetchAnalyticsData.mockRejectedValue(
- new Error(
-  "Failed to retrieve analytics information."
- )
-);
-
-
-
-const response =
- await request(app)
- .get("/analytics");
-
-
-
-expect(
- response.status
-)
-.toBe(500);
-
-
-
-expect(
- response.body
-)
-.toEqual({
- message:
- "Failed to retrieve analytics information."
-});
-
-
-});
-
-
+      message: "Failed to retrieve analytics information.",
+    });
+  });
 });

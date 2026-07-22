@@ -10,7 +10,7 @@ export default function HighRiskTenantTable({ tenants = [] }) {
 
             <th className="text-left">Risk Level</th>
 
-            <th className="text-left">Late Payments</th>
+            <th className="text-left">Score</th>
 
             <th className="text-left">Balance</th>
           </tr>
@@ -20,7 +20,7 @@ export default function HighRiskTenantTable({ tenants = [] }) {
           {tenants.length > 0 ? (
             tenants.map((tenant, index) => (
               <tr key={tenant.id ?? tenant.tenantId ?? index}>
-                <td>{tenant.tenantId ?? "N/A"}</td>
+                <td>{tenant.tenantId ?? tenant.tenant_id ?? "N/A"}</td>
 
                 <td>
                   <span
@@ -37,7 +37,7 @@ export default function HighRiskTenantTable({ tenants = [] }) {
                   </span>
                 </td>
 
-                <td>{tenant.latePayments ?? 0}</td>
+                <td>{tenant.riskScore ?? 0}</td>
 
                 <td>₱{tenant.unpaidBalance ?? 0}</td>
               </tr>

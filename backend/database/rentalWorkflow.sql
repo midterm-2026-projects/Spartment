@@ -779,8 +779,8 @@ alter table public.notifications enable row level security;
 -- =========================================================
 -- PUBLIC ROOM POLICY
 -- =========================================================
--- Anonymous and authenticated public users may only retrieve
--- available rooms.
+-- Anonymous and authenticated users may browse the room catalogue.
+-- Private tenant and billing data lives in separate protected tables.
 -- =========================================================
 
 drop policy if exists
@@ -792,7 +792,7 @@ create policy
 on public.rooms
 for select
 to anon, authenticated
-using (status = 'Available');
+using (true);
 
 -- =========================================================
 -- PUBLIC INQUIRY POLICY

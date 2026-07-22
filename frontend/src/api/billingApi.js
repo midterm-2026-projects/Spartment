@@ -1,85 +1,25 @@
-import axios from "axios";
+const API_URL = `${import.meta.env.VITE_API_BASE_URL || "/api"}/billing`;
 
-const API_URL = "http://localhost:5000/api/billing";
+const headers = (json = false) => ({
+  ...(json ? { "Content-Type": "application/json" } : {}),
+  Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+});
 
-/*
-==========================================
-GET ALL BILLING
-==========================================
-*/
-
-export async function getAllBilling() {
+async function request(url, options = {}, fallback) {
+  let response;
   try {
-    const response = await axios.get(API_URL);
-
-    return response.data;
-  } catch (error) {
-    throw new Error("Failed to retrieve billing information.");
+    response = await fetch(url, options);
+  } catch {
+    throw new Error(fallback);
   }
+  const result = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(result?.message || fallback);
+  return result;
 }
 
-/*
-==========================================
-GET BILLING BY ID
-==========================================
-*/
-
-export async function getBillingById(id) {
-  try {
-    const response = await axios.get(`${API_URL}/${id}`);
-
-    return response.data;
-  } catch (error) {
-    throw new Error("Failed to retrieve billing.");
-  }
-}
-
-/*
-==========================================
-GET TENANT BILLING
-==========================================
-*/
-
-export async function getTenantBilling(tenantId) {
-  try {
-    const response = await axios.get(`${API_URL}/tenant/${tenantId}`);
-
-    return response.data;
-  } catch (error) {
-    throw new Error("Failed to retrieve billing information.");
-  }
-}
-
-/*
-==========================================
-GENERATE BILLING
-==========================================
-*/
-
-export async function generateBilling(billingData) {
-  try {
-    const response = await axios.post(`${API_URL}/generate`, billingData);
-
-    return response.data;
-  } catch (error) {
-    throw new Error("Failed to generate billing.");
-  }
-}
-
-/*
-==========================================
-UPDATE BILLING STATUS
-==========================================
-*/
-
-export async function updateBillingStatus(billingId, status) {
-  try {
-    const response = await axios.patch(`${API_URL}/${billingId}/status`, {
-      status,
-    });
-
-    return response.data;
-  } catch (error) {
-    throw new Error("Failed to update billing status.");
-  }
-}
+export const getAllBilling = () => request(API_URL, { headers: headers() }, "Failed to retrieve billing information.");
+export const getBillingById = (id) => request(`${API_URL}/${id}`, { headers: headers() }, "Failed to retrieve billing.");
+export const getTenantBilling = (tenantId) => request(`${API_URL}/tenant/${tenantId}`, { headers: headers() }, "Failed to retrieve billing information.");
+export const generateBilling = (data) => request(API_URL, { method:"POST", headers:headers(true), body:JSON.stringify(data) }, "Failed to generate billing.");
+export const updateBillingStatus = (id,status) => request(`${API_URL}/${id}/status`, { method:"PATCH", headers:headers(true), body:JSON.stringify({status}) }, "Failed to update billing status.");
+export const saveUtilityBilling = (id,data) => request(`${API_URL}/${id}/utility`, { method:"PATCH", headers:headers(true), body:JSON.stringify(data) }, "Failed to save utility billing.");

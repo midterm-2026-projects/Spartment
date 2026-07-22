@@ -115,7 +115,10 @@ describe("Tenant Service", () => {
 
     expect(generateBilling).toHaveBeenCalledWith({
       tenantId,
-      billingType: "initial",
+      roomId,
+      totalAmount: 0,
+      billingPeriod: expect.any(String),
+      dueDate: expect.any(String),
     });
 
     expect(result.tenant.tenant_id).toBe(tenantId);

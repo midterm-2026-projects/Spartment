@@ -1,76 +1,35 @@
+import { param } from "express-validator";
+
 /*
 |--------------------------------------------------------------------------
-| Validate Tenant Risk Request
+| Validate Tenant Risk Analysis
 |--------------------------------------------------------------------------
 |
-| Used before running risk analysis.
-|
-| Checks:
-| - tenantId exists
-| - tenantId format is valid
+| Used:
+| GET /api/risk/tenant/:tenantId
 |
 |--------------------------------------------------------------------------
 */
 
+export const validateTenantRisk = [
+  param("tenantId")
+    .notEmpty()
 
-export function validateRiskTenantId(
-  req,
-  res,
-  next
-){
+    .withMessage("Tenant ID is required.")
 
+    .isUUID()
 
-const {
-  tenantId
-} = req.params;
+    .withMessage("Invalid tenant ID."),
+];
 
+/*
+|--------------------------------------------------------------------------
+| Validate High Risk Request
+|--------------------------------------------------------------------------
+|
+| GET /api/risk/high-risk
+|
+|--------------------------------------------------------------------------
+*/
 
-
-
-
-if(!tenantId){
-
-
-return res.status(400).json({
-
-message:
-"Tenant ID is required."
-
-});
-
-
-}
-
-
-
-
-
-
-
-if(
-
-isNaN(Number(tenantId))
-
-){
-
-
-return res.status(400).json({
-
-
-message:
-"Invalid tenant ID."
-
-});
-
-
-}
-
-
-
-
-
-
-next();
-
-
-}
+export const validateHighRiskRequest = [];

@@ -1,4 +1,5 @@
 import { getRooms, getAvailableRooms } from "../service/roomService.js";
+import { createRoomRecord, updateRoomRecord } from "../model/roomModel.js";
 
 /*
 |--------------------------------------------------------------------------
@@ -46,4 +47,21 @@ export const fetchAvailableRooms = async (req, res) => {
       message: error.message,
     });
   }
+};
+
+export const updateRoom = async (req, res) => {
+  try {
+    const room = await updateRoomRecord(req.params.id, req.body);
+    return res.status(200).json({ success: true, data: room });
+  } catch (error) {
+    return res.status(error.message === "Room not found" ? 404 : 400).json({ success: false, message: error.message });
+  }
+};
+
+export const createRoom = async (req, res) => {
+  try {
+    if (!req.body.roomNumber || req.body.monthlyRent === undefined) return res.status(400).json({ success: false, message: "Room number and monthly rent are required" });
+    const room = await createRoomRecord(req.body);
+    return res.status(201).json({ success: true, data: room });
+  } catch (error) { return res.status(400).json({ success: false, message: error.message }); }
 };

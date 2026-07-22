@@ -45,9 +45,6 @@ export async function createBillingRecord(billingData) {
         billingData.status ??
         "Unpaid",
 
-      billing_type:
-        billingData.billingType ??
-        "Rent",
     })
     .select()
     .single();
@@ -103,7 +100,46 @@ export async function getBillingInformation() {
   }
 
 
-  return data ?? [];
+  const records = data ?? [];
+  if (!records.length) return records;
+
+  const { data: utilities, error: utilityError } = await supabase
+    .from("utility_billings")
+    .select("*")
+    .in("billing_id", records.map((record) => record.id));
+
+  if (utilityError) {
+    throw new Error(`Failed to retrieve utility billing records: ${utilityError.message}`);
+  }
+
+  return records.map((record) => ({
+    ...record,
+    utility: (utilities ?? []).find((item) => item.billing_id === record.id) ?? null,
+  }));
+}
+
+export async function upsertUtilityBilling(billingId, amounts) {
+  const { data: billing, error: billingError } = await supabase
+    .from("billings").select("id, tenant_id").eq("id", billingId).maybeSingle();
+  if (billingError || !billing) throw new Error(billingError?.message || "Billing record not found");
+
+  const payload = {
+    billing_id: billing.id,
+    tenant_id: billing.tenant_id,
+    electricity_amount: Number(amounts.electricityAmount ?? 0),
+    water_amount: Number(amounts.waterAmount ?? 0),
+    internet_amount: Number(amounts.internetAmount ?? 0),
+    updated_at: new Date().toISOString(),
+  };
+  const { data: existing, error: findError } = await supabase
+    .from("utility_billings").select("id").eq("billing_id", billingId).maybeSingle();
+  if (findError) throw new Error(`Failed to retrieve utility billing: ${findError.message}`);
+  const query = existing
+    ? supabase.from("utility_billings").update(payload).eq("id", existing.id)
+    : supabase.from("utility_billings").insert(payload);
+  const { data, error } = await query.select("*").single();
+  if (error) throw new Error(`Failed to save utility billing: ${error.message}`);
+  return data;
 }
 
 

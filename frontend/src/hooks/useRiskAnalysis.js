@@ -1,6 +1,27 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
-import { fetchTenantRisk, fetchHighRiskTenants } from "../api/riskApi";
+import {
+  fetchTenantRisk,
+  fetchHighRiskTenants,
+  fetchRiskAssessments,
+  refreshTenantRisk,
+} from "../api/riskApi";
+
+/*
+==========================================
+TENANT RISK HOOK
+==========================================
+
+Used for:
+
+- Tenant risk assessment
+- Risk score
+- Risk level
+- Risk indicators
+- Risk conditions
+
+==========================================
+*/
 
 export function useTenantRisk(tenantId) {
   const [risk, setRisk] = useState(null);
@@ -10,14 +31,46 @@ export function useTenantRisk(tenantId) {
   const [error, setError] = useState(null);
 
   const loadRisk = async () => {
-    if (!tenantId) return;
+    if (!tenantId) {
+      return;
+    }
 
     try {
       setLoading(true);
 
-      const response = await fetchTenantRisk(tenantId);
+      setError(null);
 
-      setRisk(response.data);
+      const data = await fetchTenantRisk(tenantId);
+
+      setRisk(data);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /*
+  ==========================================
+  REFRESH TENANT RISK
+  ==========================================
+  */
+
+  const refreshRisk = async () => {
+    if (!tenantId) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      setError(null);
+
+      const data = await refreshTenantRisk(tenantId);
+
+      setRisk(data);
+
+      return data;
     } catch (error) {
       setError(error.message);
     } finally {
@@ -37,8 +90,23 @@ export function useTenantRisk(tenantId) {
     error,
 
     reload: loadRisk,
+
+    refresh: refreshRisk,
   };
 }
+
+/*
+==========================================
+HIGH RISK TENANTS HOOK
+==========================================
+
+Used for:
+
+- High risk tenant table
+- Risk dashboard
+
+==========================================
+*/
 
 export function useHighRiskTenants() {
   const [tenants, setTenants] = useState([]);
@@ -51,9 +119,11 @@ export function useHighRiskTenants() {
     try {
       setLoading(true);
 
-      const response = await fetchHighRiskTenants();
+      setError(null);
 
-      setTenants(response.data);
+      const data = await fetchHighRiskTenants();
+
+      setTenants(data ?? []);
     } catch (error) {
       setError(error.message);
     } finally {
@@ -73,5 +143,57 @@ export function useHighRiskTenants() {
     error,
 
     reload: loadHighRiskTenants,
+  };
+}
+
+/*
+==========================================
+ALL RISK ASSESSMENTS HOOK
+==========================================
+
+Used for:
+
+- Risk Dashboard summary
+- Risk analytics
+- Risk history
+
+==========================================
+*/
+
+export function useRiskAssessments() {
+  const [risks, setRisks] = useState([]);
+
+  const [loading, setLoading] = useState(false);
+
+  const [error, setError] = useState(null);
+
+  const loadRisks = async () => {
+    try {
+      setLoading(true);
+
+      setError(null);
+
+      const data = await fetchRiskAssessments();
+
+      setRisks(data ?? []);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadRisks();
+  }, []);
+
+  return {
+    risks,
+
+    loading,
+
+    error,
+
+    reload: loadRisks,
   };
 }

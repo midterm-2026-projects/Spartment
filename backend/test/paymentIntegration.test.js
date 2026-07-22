@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+/*
+|--------------------------------------------------------------------------
+| Mock Payment Model
+|--------------------------------------------------------------------------
+*/
+
 vi.mock("../model/paymentModel.js", () => ({
   createPaymentRecord: vi.fn(),
 
@@ -8,13 +14,61 @@ vi.mock("../model/paymentModel.js", () => ({
   getPayments: vi.fn(),
 }));
 
+/*
+|--------------------------------------------------------------------------
+| Mock Transaction Model
+|--------------------------------------------------------------------------
+*/
+
 vi.mock("../model/paymentTransactionModel.js", () => ({
   createPaymentTransaction: vi.fn(),
 }));
 
+/*
+|--------------------------------------------------------------------------
+| Mock DSS Refresh
+|--------------------------------------------------------------------------
+*/
+
+vi.mock("../service/dssRefreshService.js", () => ({
+  refreshTenantDSS: vi.fn(),
+}));
+
+/*
+|--------------------------------------------------------------------------
+| Supabase Mock
+|--------------------------------------------------------------------------
+*/
+
+const { rpcMock, fromMock } = vi.hoisted(() => ({
+  rpcMock: vi.fn(),
+
+  fromMock: vi.fn(() => ({
+    select: vi.fn(() => ({
+      eq: vi.fn(() => ({
+        single: vi.fn().mockResolvedValue({
+          data: {
+            tenant_id: "tenant-001",
+          },
+
+          error: null,
+        }),
+      })),
+    })),
+  })),
+}));
+
 vi.mock("../config/supabaseClient.js", () => ({
+  default: {
+    rpc: rpcMock,
+
+    from: fromMock,
+  },
+
   supabase: {
-    rpc: vi.fn(),
+    rpc: rpcMock,
+
+    from: fromMock,
   },
 }));
 
@@ -41,6 +95,8 @@ describe("Payment Integration", () => {
   });
 
   it("should save payment successfully", async () => {
+    // Arrange
+
     createPaymentRecord.mockResolvedValue({
       id: "payment-001",
 
@@ -48,6 +104,8 @@ describe("Payment Integration", () => {
 
       verification_status: "Pending",
     });
+
+    // Act
 
     const result = await submitPayment({
       tenantId: "tenant-001",
@@ -61,13 +119,17 @@ describe("Payment Integration", () => {
       paymentReference: "PAY-001",
     });
 
+    // Assert
+
     expect(createPaymentRecord).toHaveBeenCalled();
 
     expect(result.verification_status).toBe("Pending");
   });
 
   it("should verify payment successfully", async () => {
-    supabase.rpc.mockResolvedValue({
+    // Arrange
+
+    rpcMock.mockResolvedValue({
       data: {
         payment_id: "payment-001",
 
@@ -81,11 +143,15 @@ describe("Payment Integration", () => {
       id: "transaction-001",
     });
 
+    // Act
+
     const result = await verifyPayment(
       "payment-001",
 
       "admin-001",
     );
+
+    // Assert
 
     expect(supabase.rpc).toHaveBeenCalledWith(
       "verify_payment",
@@ -103,6 +169,8 @@ describe("Payment Integration", () => {
   });
 
   it("should retrieve tenant payment history", async () => {
+    // Arrange
+
     getPaymentsByTenant.mockResolvedValue([
       {
         tenant_id: "tenant-001",
@@ -111,7 +179,11 @@ describe("Payment Integration", () => {
       },
     ]);
 
+    // Act
+
     const result = await getPaymentHistory("tenant-001");
+
+    // Assert
 
     expect(getPaymentsByTenant).toHaveBeenCalledWith("tenant-001");
 
@@ -119,6 +191,8 @@ describe("Payment Integration", () => {
   });
 
   it("should calculate revenue metrics", async () => {
+    // Arrange
+
     getPayments.mockResolvedValue([
       {
         amount: 5000,
@@ -133,7 +207,11 @@ describe("Payment Integration", () => {
       },
     ]);
 
+    // Act
+
     const result = await getPaymentMetrics();
+
+    // Assert
 
     expect(result.collectedRevenue).toBe(5000);
 

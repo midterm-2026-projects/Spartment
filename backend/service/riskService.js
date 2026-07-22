@@ -1,286 +1,74 @@
 import {
-  getPaymentsByTenant,
-  getPayments,
-} from "../model/paymentModel.js";
-
-
-import {
   createRiskRecord,
   getHighRiskRecords,
+  getRiskByTenant,
+  getRiskRecords,
 } from "../model/riskModel.js";
 
-
-
-
-
-
-
+import {
+  generateTenantRiskAssessment,
+  generateSystemRiskAssessment,
+} from "./riskAnalysisService.js";
 
 /*
 |--------------------------------------------------------------------------
 | Analyze Tenant Risk
 |--------------------------------------------------------------------------
 |
-| Checks:
-| - Late payment patterns
-| - Unpaid balances
-| - Payment history
+| Flow:
+|
+| Controller
+|    |
+| riskService
+|    |
+| riskAnalysisService
+|    |
+| riskModel
+|    |
+| Supabase
 |
 |--------------------------------------------------------------------------
 */
 
+export async function analyzeTenantRisk(tenantId) {
+  const assessment = await generateTenantRiskAssessment(tenantId);
 
-export async function analyzeTenantRisk(
+  const savedRisk = await createRiskRecord(assessment);
 
-tenantId
-
-){
-
-
-const payments =
-
-await getPaymentsByTenant(
-
-tenantId
-
-);
-
-
-
-
-
-
-if(!payments || payments.length === 0){
-
-
-throw new Error(
-
-"No payment records found."
-
-);
-
-
+  return savedRisk;
 }
-
-
-
-
-
-
-
-
-let latePayments = 0;
-
-let unpaidBalance = 0;
-
-
-let indicators = [];
-
-
-
-
-
-
-
-
-payments.forEach(payment => {
-
-
-
-
-if(payment.status === "Late"){
-
-
-latePayments++;
-
-
-}
-
-
-
-
-
-if(
-
-payment.status === "Pending"
-
-){
-
-
-unpaidBalance +=
-
-payment.amount;
-
-
-}
-
-
-
-
-});
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
-| Risk Calculation
+| Analyze System Risk
+|--------------------------------------------------------------------------
+|
+| Checks:
+|
+| - Room vacancy
+| - Revenue problems
+| - Billing issues
+|
 |--------------------------------------------------------------------------
 */
 
+export async function analyzeSystemRisk() {
+  const assessment = await generateSystemRiskAssessment();
 
-let riskLevel = "Low";
+  const savedRisk = await createRiskRecord(assessment);
 
-
-
-
-
-if(
-
-latePayments >= 3 ||
-
-unpaidBalance > 0
-
-){
-
-
-riskLevel = "High";
-
-
+  return savedRisk;
 }
-
-
-
-
-
-else if(
-
-latePayments >= 1
-
-){
-
-
-riskLevel = "Medium";
-
-
-}
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
-| Generate Risk Indicators
+| Get Tenant Risk
 |--------------------------------------------------------------------------
 */
 
-
-if(latePayments > 0){
-
-
-indicators.push(
-
-`${latePayments} late payment(s) detected`
-
-);
-
-
+export async function getTenantRisk(tenantId) {
+  return await getRiskByTenant(tenantId);
 }
-
-
-
-
-if(unpaidBalance > 0){
-
-
-indicators.push(
-
-`Outstanding balance of ${unpaidBalance}`
-
-);
-
-
-}
-
-
-
-
-
-
-
-if(indicators.length === 0){
-
-
-indicators.push(
-
-"Payments are up to date."
-
-);
-
-
-}
-
-
-
-
-
-
-
-
-
-const riskRecord =
-
-await createRiskRecord({
-
-
-tenantId,
-
-
-riskLevel,
-
-
-indicators,
-
-
-latePayments,
-
-
-unpaidBalance
-
-
-});
-
-
-
-
-
-
-
-return riskRecord;
-
-
-}
-
-
-
-
-
-
-
-
-
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -288,11 +76,16 @@ return riskRecord;
 |--------------------------------------------------------------------------
 */
 
+export async function getHighRiskTenants() {
+  return await getHighRiskRecords();
+}
 
-export async function getHighRiskTenants(){
+/*
+|--------------------------------------------------------------------------
+| Get All Risk Records
+|--------------------------------------------------------------------------
+*/
 
-
-return await getHighRiskRecords();
-
-
+export async function getAllRiskRecords() {
+  return await getRiskRecords();
 }
