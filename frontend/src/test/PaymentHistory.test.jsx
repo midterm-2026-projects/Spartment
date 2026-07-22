@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 
 import { describe, it, expect } from "vitest";
 
-import PaymentHistory from "../components/PaymentHistory";
+import PaymentHistory from "../components/PaymentHistory.jsx";
 
 describe("PaymentHistory", () => {
   const payments = [

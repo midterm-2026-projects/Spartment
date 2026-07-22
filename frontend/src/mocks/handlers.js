@@ -3,142 +3,6 @@ import { http, HttpResponse } from "msw";
 export const handlers = [
   /*
 ==========================================
-BILLING API
-==========================================
-*/
-
-  http.get("http://localhost:5000/api/billing", () => {
-    return HttpResponse.json({
-      success: true,
-      data: [
-        {
-          id: 1,
-          tenantId: 1,
-          rentAmount: 5000,
-          waterBill: 200,
-          electricityBill: 850,
-          totalAmount: 6050,
-          status: "Pending",
-          dueDate: "2026-07-30",
-        },
-      ],
-    });
-  }),
-
-  http.get("http://localhost:5000/api/billing/tenant/:tenantId", () => {
-    return HttpResponse.json({
-      success: true,
-      data: {
-        id: 1,
-        tenantId: 1,
-        rentAmount: 5000,
-        waterBill: 200,
-        electricityBill: 850,
-        totalAmount: 6050,
-        status: "Pending",
-        dueDate: "2026-07-30",
-        payments: [
-          {
-            id: 1,
-            amount: 6050,
-            paymentMethod: "Cash",
-            status: "Paid",
-            paymentDate: "2026-07-20",
-          },
-        ],
-      },
-    });
-  }),
-
-  http.post(
-    "http://localhost:5000/api/billing/generate",
-    async ({ request }) => {
-      const body = await request.json();
-
-      return HttpResponse.json({
-        success: true,
-        message: "Billing generated successfully.",
-        data: {
-          id: 1,
-          tenantId: body.tenantId,
-          billingType: body.billingType || "initial",
-          rentAmount: 5000,
-          waterBill: 200,
-          electricityBill: 0,
-          totalAmount: 5200,
-          status: "Pending",
-        },
-      });
-    },
-  ),
-
-  http.patch(
-    "http://localhost:5000/api/billing/:billingId/status",
-    async ({ request }) => {
-      const body = await request.json();
-
-      return HttpResponse.json({
-        success: true,
-        message: "Billing status updated successfully.",
-        data: {
-          id: 1,
-          status: body.status,
-        },
-      });
-    },
-  ),
-
-  /*
-==========================================
-PAYMENT API
-==========================================
-*/
-
-  http.patch(
-    "http://localhost:5000/api/payment/:id/confirm",
-    async ({ request }) => {
-      const body = await request.json();
-
-      return HttpResponse.json({
-        message: "Payment confirmed successfully.",
-        data: {
-          id: 1,
-          amount: 6050,
-          paymentMethod: body.paymentMethod || "Cash",
-          status: "Paid",
-          paymentDate: "2026-07-20",
-        },
-      });
-    },
-  ),
-
-  http.get("http://localhost:5000/api/payment/tenant/:tenantId", () => {
-    return HttpResponse.json({
-      message: "Payment history retrieved successfully.",
-      data: [
-        {
-          id: 1,
-          amount: 6050,
-          paymentMethod: "Cash",
-          status: "Paid",
-          paymentDate: "2026-07-20",
-        },
-      ],
-    });
-  }),
-
-  http.get("http://localhost:5000/api/payment/metrics", () => {
-    return HttpResponse.json({
-      data: {
-        collectedRevenue: 50000,
-        pendingPayments: 5,
-        latePayments: 2,
-      },
-    });
-  }),
-
-  /*
-==========================================
 ANALYTICS API
 ==========================================
 */
@@ -153,7 +17,9 @@ ANALYTICS API
 
       paymentStatus: {
         paid: 20,
+
         pending: 5,
+
         overdue: 2,
       },
 
@@ -172,6 +38,7 @@ ANALYTICS API
       recommendations: [
         {
           title: "Overdue Payments",
+
           message: "2 tenants have overdue balances.",
         },
       ],
@@ -180,169 +47,184 @@ ANALYTICS API
 
   /*
 ==========================================
-ROOM API
+BILLING API
 ==========================================
 */
-
-  http.get("http://localhost:5000/api/rooms", () => {
-    return HttpResponse.json([
-      {
-        roomId: 1,
-        roomNumber: "101",
-        status: "Vacant",
-        price: 5000,
-      },
-
-      {
-        roomId: 2,
-        roomNumber: "102",
-        status: "Occupied",
-        price: 5000,
-      },
-
-      {
-        roomId: 3,
-        roomNumber: "103",
-        status: "Reserved",
-        price: 5000,
-      },
-    ]);
-  }),
-
-  http.get("http://localhost:5000/api/rooms/available", () => {
-    return HttpResponse.json([
-      {
-        roomId: 1,
-        roomNumber: "101",
-        status: "Vacant",
-        price: 5000,
-      },
-    ]);
-  }),
 
   /*
-==========================================
-INQUIRY API
-==========================================
+GET ALL BILLING
+
+GET /api/billing
 */
 
-  http.post("http://localhost:5000/api/inquiries", async ({ request }) => {
-    const body = await request.json();
-
+  http.get("http://localhost:5000/api/billing", () => {
     return HttpResponse.json({
-      message: "Inquiry submitted successfully.",
+      success: true,
 
-      inquiry: {
-        id: 1,
-
-        ...body,
-
-        status: "Pending",
-      },
-    });
-  }),
-
-  http.get("http://localhost:5000/api/inquiries", () => {
-    return HttpResponse.json([
-      {
-        id: 1,
-        guestName: "Juan Dela Cruz",
-        email: "juan@gmail.com",
-        contact: "09123456789",
-        requestedRoom: "101",
-        message: "Interested in renting this room.",
-        status: "Pending",
-      },
-    ]);
-  }),
-
-  /*
-==========================================
-CUSTOMER REQUEST API
-==========================================
-*/
-
-  http.get("http://localhost:5000/api/customer-requests", () => {
-    return HttpResponse.json([
-      {
-        id: 1,
-        guestName: "Juan Dela Cruz",
-        email: "juan@gmail.com",
-        contact: "09123456789",
-        requestedRoom: "101",
-        message: "Interested in renting this room.",
-        status: "Pending",
-      },
-    ]);
-  }),
-
-  http.put("http://localhost:5000/api/customer-requests/:id/approve", () => {
-    return HttpResponse.json({
-      message: "Request approved successfully.",
-
-      status: "Approved",
-    });
-  }),
-
-  http.put("http://localhost:5000/api/customer-requests/:id/reject", () => {
-    return HttpResponse.json({
-      message: "Request rejected successfully.",
-
-      status: "Rejected",
-    });
-  }),
-
-  /*
-==========================================
-TENANT CREATION API
-==========================================
-*/
-
-  http.post("http://localhost:5000/api/tenants", async ({ request }) => {
-    const body = await request.json();
-
-    return HttpResponse.json({
-      message: "Tenant created successfully.",
-
-      data: {
-        tenant: {
+      data: [
+        {
           id: 1,
 
-          fullName: body.fullName,
-
-          email: body.email,
-
-          contact: body.contact,
-
-          room: body.room,
-
-          username: body.username,
-
-          password: "Tenant123",
-
-          status: "Active",
-        },
-
-        billing: {
-          id: 1,
+          tenant_id: 1,
 
           tenantId: 1,
 
-          billingType: "initial",
+          room_id: 101,
+
+          roomId: 101,
 
           rentAmount: 5000,
 
+          rent_amount: 5000,
+
           waterBill: 200,
 
-          electricityBill: 0,
+          water_bill: 200,
 
-          totalAmount: 5200,
+          electricityBill: 850,
 
-          status: "Pending",
+          electricity_bill: 850,
+
+          totalAmount: 6050,
+
+          total_amount: 6050,
+
+          status: "Unpaid",
+
+          dueDate: "2026-07-30",
+
+          due_date: "2026-07-30",
         },
-      },
+      ],
     });
   }),
+
+  /*
+GET TENANT BILLING
+
+GET /api/billing/tenant/:tenantId
+
+*/
+
+  http.get(
+    "http://localhost:5000/api/billing/tenant/:tenantId",
+
+    ({ params }) => {
+      return HttpResponse.json({
+        success: true,
+
+        data: {
+          id: 1,
+
+          tenant_id: Number(params.tenantId),
+
+          tenantId: Number(params.tenantId),
+
+          room_id: 101,
+
+          roomId: 101,
+
+          rentAmount: 5000,
+
+          rent_amount: 5000,
+
+          waterBill: 200,
+
+          water_bill: 200,
+
+          electricityBill: 850,
+
+          electricity_bill: 850,
+
+          totalAmount: 6050,
+
+          total_amount: 6050,
+
+          status: "Unpaid",
+
+          dueDate: "2026-07-30",
+
+          payments: [
+            {
+              id: 1,
+
+              amount: 6050,
+
+              paymentDate: "2026-07-20",
+
+              payment_date: "2026-07-20",
+
+              paymentMethod: "Cash",
+
+              payment_method: "Cash",
+
+              status: "Pending",
+
+              payment_status: "Pending",
+            },
+          ],
+        },
+      });
+    },
+  ),
+
+  /*
+GENERATE BILLING
+
+POST /api/billing/generate
+
+*/
+
+  http.post(
+    "http://localhost:5000/api/billing/generate",
+
+    async ({ request }) => {
+      const body = await request.json();
+
+      return HttpResponse.json({
+        success: true,
+
+        message: "Billing created successfully.",
+
+        data: {
+          id: 2,
+
+          tenantId: body.tenantId,
+
+          totalAmount: 6050,
+
+          total_amount: 6050,
+
+          status: "Unpaid",
+        },
+      });
+    },
+  ),
+
+  /*
+UPDATE BILLING STATUS
+
+PATCH /api/billing/:id/status
+
+*/
+
+  http.patch(
+    "http://localhost:5000/api/billing/:id/status",
+
+    async ({ request, params }) => {
+      const body = await request.json();
+
+      return HttpResponse.json({
+        success: true,
+
+        data: {
+          id: Number(params.id),
+
+          status: body.status,
+        },
+      });
+    },
+  ),
 
   /*
 ==========================================
@@ -350,115 +232,216 @@ PAYMENT API
 ==========================================
 */
 
-  http.patch("http://localhost:5000/api/payment/:id/confirm", () => {
-    return HttpResponse.json({
-      message: "Payment confirmed successfully.",
+  /*
+CREATE PAYMENT
 
-      data: {
-        id: 1,
+POST /api/payment
 
-        amount: 6050,
+*/
 
-        paymentMethod: "Cash",
+  http.post(
+    "http://localhost:5000/api/payment",
 
-        status: "Paid",
-      },
-    });
-  }),
+    async ({ request }) => {
+      const body = await request.json();
 
-  http.get("http://localhost:5000/api/payment/tenant/:id", () => {
-    return HttpResponse.json({
-      data: [
-        {
-          date: "2026-07-20",
+      return HttpResponse.json({
+        success: true,
 
-          amount: 5000,
+        message: "Payment submitted successfully.",
 
-          method: "Cash",
+        data: {
+          id: 1,
+
+          billingId: body.billingId,
+
+          tenantId: body.tenantId,
+
+          amount: body.amount,
+
+          paymentMethod: body.paymentMethod ?? "Cash",
+
+          payment_method: body.paymentMethod ?? "Cash",
+
+          status: "Pending",
+
+          payment_status: "Pending",
+
+          verification_status: "Pending",
+        },
+      });
+    },
+  ),
+
+  /*
+VERIFY PAYMENT
+
+PATCH /api/payment/:id/verify
+
+*/
+
+  http.patch(
+    "http://localhost:5000/api/payment/:id/verify",
+
+    ({ params }) => {
+      return HttpResponse.json({
+        success: true,
+
+        message: "Payment verified successfully.",
+
+        data: {
+          id: Number(params.id),
 
           status: "Paid",
+
+          payment_status: "Paid",
+
+          verification_status: "Verified",
+
+          payment_method: "Cash",
         },
+      });
+    },
+  ),
 
-        {
-          date: "2026-06-20",
+  /*
+REJECT PAYMENT
 
-          amount: 5000,
+PATCH /api/payment/:id/reject
 
-          method: "Cash",
+*/
 
-          status: "Paid",
+  http.patch(
+    "http://localhost:5000/api/payment/:id/reject",
+
+    ({ params }) => {
+      return HttpResponse.json({
+        success: true,
+
+        message: "Payment rejected successfully.",
+
+        data: {
+          id: Number(params.id),
+
+          status: "Rejected",
+
+          payment_status: "Rejected",
+
+          verification_status: "Rejected",
         },
-      ],
-    });
-  }),
+      });
+    },
+  ),
 
-  http.get("http://localhost:5000/api/payment/metrics", () => {
-    return HttpResponse.json({
-      data: {
-        collectedRevenue: 50000,
+  /*
+GET TENANT PAYMENT HISTORY
 
-        pendingPayments: 5,
+GET /api/payment/tenant/:tenantId
 
-        latePayments: 2,
-      },
-    });
-  }),
+*/
+
+  http.get(
+    "http://localhost:5000/api/payment/tenant/:tenantId",
+
+    ({ params }) => {
+      return HttpResponse.json({
+        success: true,
+
+        data: [
+          {
+            id: 1,
+
+            tenant_id: Number(params.tenantId),
+
+            tenantId: Number(params.tenantId),
+
+            amount: 6050,
+
+            payment_date: "2026-07-20",
+
+            paymentDate: "2026-07-20",
+
+            payment_method: "Cash",
+
+            paymentMethod: "Cash",
+
+            status: "Paid",
+
+            payment_status: "Paid",
+          },
+        ],
+      });
+    },
+  ),
+
+  /*
+PAYMENT METRICS
+
+GET /api/payment/metrics
+
+*/
+
+  http.get(
+    "http://localhost:5000/api/payment/metrics",
+
+    () => {
+      return HttpResponse.json({
+        success: true,
+
+        data: {
+          collectedRevenue: 50000,
+
+          pendingPayments: 5,
+
+          latePayments: 2,
+        },
+      });
+    },
+  ),
 
   /*
 ==========================================
-TENANT INFORMATION API
-==========================================
-GET /api/tenant/:tenantId
+DASHBOARD METRICS API
 ==========================================
 */
 
-  http.get("http://localhost:5000/api/tenant/:tenantId", ({ params }) => {
-    return HttpResponse.json({
-      tenant: {
-        id: Number(params.tenantId),
+  http.get(
+    "http://localhost:5000/api/dashboard/metrics",
 
-        name: "Juan Dela Cruz",
+    () => {
+      return HttpResponse.json({
+        success: true,
 
-        contact: "09123456789",
+        data: {
+          collectedRevenue: 50000,
 
-        email: "juan@email.com",
-      },
+          pendingPayments: 5,
 
-      room: {
-        roomNumber: "101",
+          latePayments: 2,
 
-        monthlyRent: 5000,
+          totalBilling: 80000,
 
-        nextDue: "2026-07-30",
-      },
+          outstandingBalance: 30000,
 
-      payments: [
-        {
-          id: 1,
+          paymentRate: 85,
 
-          paymentDate: "2026-07-20",
+          revenueTrend: [
+            {
+              month: "January",
 
-          amount: 5000,
+              amount: 50000,
+            },
 
-          paymentMethod: "Cash",
+            {
+              month: "February",
 
-          status: "Paid",
+              amount: 60000,
+            },
+          ],
         },
-
-        {
-          id: 2,
-
-          paymentDate: "2026-06-20",
-
-          amount: 5000,
-
-          paymentMethod: "Cash",
-
-          status: "Paid",
-        },
-      ],
-    });
-  }),
+      });
+    },
+  ),
 
   /*
 ==========================================
@@ -467,84 +450,427 @@ RISK ANALYSIS API
 */
 
   /*
-GET Tenant Risk Analysis
+GET TENANT RISK
 
-Backend:
 GET /api/risk/tenant/:tenantId
 
 */
 
-  http.get("http://localhost:5000/api/risk/tenant/:tenantId", ({ params }) => {
-    return HttpResponse.json({
-      success: true,
+  http.get(
+    "http://localhost:5000/api/risk/tenant/:tenantId",
 
-      data: {
-        tenantId: Number(params.tenantId),
+    ({ params }) => {
+      return HttpResponse.json({
+        success: true,
 
-        riskLevel: "High",
-
-        latePayments: 3,
-
-        unpaidBalance: 5000,
-
-        indicators: [
-          "Repeated late payments detected.",
-
-          "Outstanding unpaid balance.",
-
-          "Payment delays exceeded allowed limit.",
-        ],
-
-        analyzedAt: "2026-07-20",
-      },
-    });
-  }),
-
-  /*
-GET High Risk Tenants
-
-Backend:
-GET /api/risk/high-risk
-
-*/
-
-  http.get("http://localhost:5000/api/risk/high-risk", () => {
-    return HttpResponse.json({
-      success: true,
-
-      data: [
-        {
-          id: 1,
-
-          tenantId: 1,
-
-          tenantName: "Juan Dela Cruz",
+        data: {
+          tenantId: Number(params.tenantId),
 
           riskLevel: "High",
+
+          score: 85,
 
           latePayments: 3,
 
           unpaidBalance: 5000,
 
-          indicators: ["Repeated late payments", "Outstanding balance"],
+          indicators: [
+            "Repeated late payments detected.",
+
+            "Outstanding unpaid balance.",
+
+            "Payment delays exceeded limit.",
+          ],
+
+          analyzedAt: "2026-07-20",
         },
+      });
+    },
+  ),
 
-        {
-          id: 2,
+  /*
+GET HIGH RISK TENANTS
 
-          tenantId: 2,
+GET /api/risk/high-risk
 
-          tenantName: "Maria Santos",
+*/
 
-          riskLevel: "Medium",
+  http.get(
+    "http://localhost:5000/api/risk/high-risk",
 
-          latePayments: 1,
+    () => {
+      return HttpResponse.json({
+        success: true,
 
-          unpaidBalance: 2000,
+        data: [
+          {
+            id: 1,
 
-          indicators: ["One late payment detected"],
+            tenantId: 1,
+
+            tenantName: "Juan Dela Cruz",
+
+            riskLevel: "High",
+
+            latePayments: 3,
+
+            unpaidBalance: 5000,
+
+            indicators: ["Repeated late payments", "Outstanding balance"],
+          },
+
+          {
+            id: 2,
+
+            tenantId: 2,
+
+            tenantName: "Maria Santos",
+
+            riskLevel: "Medium",
+
+            latePayments: 1,
+
+            unpaidBalance: 2000,
+
+            indicators: ["Late payment detected"],
+          },
+        ],
+      });
+    },
+  ),
+
+  /*
+==========================================
+TENANT API
+==========================================
+*/
+
+  /*
+GET TENANT INFORMATION
+
+GET /api/tenant/:tenantId
+
+*/
+
+  http.get(
+    "http://localhost:5000/api/tenant/:tenantId",
+
+    ({ params }) => {
+      return HttpResponse.json({
+        success: true,
+
+        data: {
+          tenant: {
+            id: Number(params.tenantId),
+
+            fullName: "Juan Dela Cruz",
+
+            email: "juan@gmail.com",
+
+            contact: "09123456789",
+          },
+
+          room: {
+            roomNumber: "101",
+
+            monthlyRent: 5000,
+
+            nextDue: "2026-07-30",
+          },
+
+          payments: [
+            {
+              id: 1,
+
+              amount: 5000,
+
+              paymentMethod: "Cash",
+
+              payment_method: "Cash",
+
+              status: "Paid",
+
+              paymentDate: "2026-07-20",
+
+              payment_date: "2026-07-20",
+            },
+          ],
         },
-      ],
-    });
-  }),
+      });
+    },
+  ),
+
+  /*
+CREATE TENANT
+
+POST /api/tenants
+
+*/
+
+  http.post(
+    "http://localhost:5000/api/tenants",
+
+    async ({ request }) => {
+      const body = await request.json();
+
+      return HttpResponse.json({
+        success: true,
+
+        message: "Tenant created successfully.",
+
+        data: {
+          tenant: {
+            id: 1,
+
+            fullName: body.fullName,
+
+            email: body.email,
+
+            contact: body.contact,
+
+            status: "Active",
+          },
+
+          billing: {
+            id: 1,
+
+            tenantId: 1,
+
+            billingType: "Rent",
+
+            totalAmount: 6050,
+
+            status: "Unpaid",
+          },
+        },
+      });
+    },
+  ),
+
+  /*
+==========================================
+ROOM API
+==========================================
+*/
+
+  /*
+GET ALL ROOMS
+
+GET /api/rooms
+
+*/
+
+  http.get(
+    "http://localhost:5000/api/rooms",
+
+    () => {
+      return HttpResponse.json({
+        success: true,
+
+        data: [
+          {
+            id: 1,
+
+            roomNumber: "101",
+
+            status: "Available",
+
+            monthlyRent: 5000,
+          },
+
+          {
+            id: 2,
+
+            roomNumber: "102",
+
+            status: "Occupied",
+
+            monthlyRent: 5000,
+          },
+        ],
+      });
+    },
+  ),
+
+  /*
+GET AVAILABLE ROOMS
+
+GET /api/rooms/available
+
+*/
+
+  http.get(
+    "http://localhost:5000/api/rooms/available",
+
+    () => {
+      return HttpResponse.json({
+        success: true,
+
+        data: [
+          {
+            id: 1,
+
+            roomNumber: "101",
+
+            status: "Available",
+
+            monthlyRent: 5000,
+          },
+        ],
+      });
+    },
+  ),
+
+  /*
+==========================================
+INQUIRY API
+==========================================
+*/
+
+  /*
+GET INQUIRIES
+
+GET /api/inquiries
+
+*/
+
+  http.get(
+    "http://localhost:5000/api/inquiries",
+
+    () => {
+      return HttpResponse.json({
+        success: true,
+
+        data: [
+          {
+            id: 1,
+
+            guestName: "Juan Dela Cruz",
+
+            email: "juan@gmail.com",
+
+            contact: "09123456789",
+
+            requestedRoom: "101",
+
+            status: "Pending",
+          },
+        ],
+      });
+    },
+  ),
+
+  /*
+CREATE INQUIRY
+
+POST /api/inquiries
+
+*/
+
+  http.post(
+    "http://localhost:5000/api/inquiries",
+
+    async ({ request }) => {
+      const body = await request.json();
+
+      return HttpResponse.json({
+        success: true,
+
+        message: "Inquiry submitted successfully.",
+
+        data: {
+          id: 1,
+
+          ...body,
+
+          status: "Pending",
+        },
+      });
+    },
+  ),
+
+  /*
+==========================================
+CUSTOMER REQUEST API
+==========================================
+*/
+
+  /*
+GET CUSTOMER REQUESTS
+
+GET /api/customer-requests
+
+*/
+
+  http.get(
+    "http://localhost:5000/api/customer-requests",
+
+    () => {
+      return HttpResponse.json({
+        success: true,
+
+        data: [
+          {
+            id: 1,
+
+            guestName: "Juan Dela Cruz",
+
+            requestedRoom: "101",
+
+            status: "Pending",
+          },
+        ],
+      });
+    },
+  ),
+
+  /*
+APPROVE REQUEST
+
+PUT /api/customer-requests/:id/approve
+
+*/
+
+  http.put(
+    "http://localhost:5000/api/customer-requests/:id/approve",
+
+    ({ params }) => {
+      return HttpResponse.json({
+        success: true,
+
+        message: "Request approved successfully.",
+
+        data: {
+          id: Number(params.id),
+
+          status: "Approved",
+        },
+      });
+    },
+  ),
+
+  /*
+REJECT REQUEST
+
+PUT /api/customer-requests/:id/reject
+
+*/
+
+  http.put(
+    "http://localhost:5000/api/customer-requests/:id/reject",
+
+    ({ params }) => {
+      return HttpResponse.json({
+        success: true,
+
+        message: "Request rejected successfully.",
+
+        data: {
+          id: Number(params.id),
+
+          status: "Rejected",
+        },
+      });
+    },
+  ),
 ];

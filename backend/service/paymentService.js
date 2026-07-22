@@ -5,68 +5,82 @@ import {
   getPayments,
 } from "../model/paymentModel.js";
 
-import { updateBillingPaymentStatus } from "./billingService.js";
+import { createPaymentTransaction } from "../model/paymentTransactionModel.js";
+
+import { supabase } from "../config/supabaseClient.js";
 
 /*
 |--------------------------------------------------------------------------
-| Confirm Payment
-|--------------------------------------------------------------------------
-| Admin confirms manual payment.
-|
-| Cash / Hand-to-hand payment.
+| Submit Payment
 |--------------------------------------------------------------------------
 */
 
-export async function confirmPayment(
-  paymentId,
+export async function submitPayment(data) {
+  const payment = await import("../model/paymentModel.js").then((module) =>
+    module.createPaymentRecord(data),
+  );
 
-  paymentMethod = "Cash",
-) {
-  try {
-    const payment = await getPaymentById(paymentId);
-
-    if (!payment) {
-      throw new Error("Payment not found.");
-    }
-
-    const updatedPayment = await updatePaymentStatus(
-      paymentId,
-
-      {
-        status: "Paid",
-
-        paymentMethod,
-
-        paymentDate: new Date(),
-      },
-    );
-
-    if (payment.billingId) {
-      await updateBillingPaymentStatus(
-        payment.billingId,
-
-        "Paid",
-      );
-    }
-
-    return updatedPayment;
-  } catch (error) {
-    throw new Error(error.message);
-  }
+  return payment;
 }
 
 /*
 |--------------------------------------------------------------------------
-| Get Tenant Payment History
+| Verify Payment
+|--------------------------------------------------------------------------
+*/
+
+export async function verifyPayment(paymentId, verifiedBy) {
+  const { data, error } = await supabase.rpc("verify_payment", {
+    p_payment_id: paymentId,
+
+    p_verified_by: verifiedBy,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  await createPaymentTransaction({
+    paymentId,
+
+    transactionType: "Verified",
+
+    amount: 0,
+
+    description: "Payment verified",
+  });
+
+  return data;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Reject Payment
+|--------------------------------------------------------------------------
+*/
+
+export async function rejectPayment(paymentId, rejectedBy) {
+  const { data, error } = await supabase.rpc("reject_payment", {
+    p_payment_id: paymentId,
+
+    p_rejected_by: rejectedBy,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Payment History
 |--------------------------------------------------------------------------
 */
 
 export async function getPaymentHistory(tenantId) {
-  try {
-    return await getPaymentsByTenant(tenantId);
-  } catch (error) {
-    throw new Error("Failed to retrieve payment history.");
-  }
+  return await getPaymentsByTenant(tenantId);
 }
 
 /*
@@ -78,27 +92,27 @@ export async function getPaymentHistory(tenantId) {
 export async function getPaymentMetrics() {
   const payments = await getPayments();
 
-  const collectedRevenue = payments
-
-    .filter((payment) => payment.status === "Paid")
-
-    .reduce(
-      (total, payment) => total + payment.amount,
-
-      0,
-    );
-
-  const pendingPayments = payments.filter(
-    (payment) => payment.status === "Pending",
+  const verifiedPayments = payments.filter(
+    (payment) => payment.verification_status === "Verified",
   );
 
-  const latePayments = payments.filter((payment) => payment.status === "Late");
+  const collectedRevenue = verifiedPayments.reduce(
+    (total, payment) => total + Number(payment.amount),
+
+    0,
+  );
 
   return {
     collectedRevenue,
 
-    pendingPayments: pendingPayments.length,
+    verifiedPayments: verifiedPayments.length,
 
-    latePayments: latePayments.length,
+    pendingPayments: payments.filter(
+      (payment) => payment.verification_status === "Pending",
+    ).length,
+
+    rejectedPayments: payments.filter(
+      (payment) => payment.verification_status === "Rejected",
+    ).length,
   };
 }

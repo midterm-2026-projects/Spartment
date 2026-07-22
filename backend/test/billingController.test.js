@@ -1,16 +1,18 @@
 import { describe, it, expect, vi } from "vitest";
 
 vi.mock("../service/billingService.js", () => ({
-  getAllBilling: vi.fn(),
+  fetchBillingInformation: vi.fn(),
 
   generateBilling: vi.fn(),
 
   getBillingByTenant: vi.fn(),
 
-  updateBillingStatus: vi.fn(),
+  fetchBillingById: vi.fn(),
+
+  updateBillingPaymentStatus: vi.fn(),
 }));
 
-import { getAllBilling } from "../service/billingService.js";
+import { fetchBillingInformation } from "../service/billingService.js";
 
 import { getBillingRecords } from "../controller/billingController.js";
 
@@ -23,48 +25,34 @@ function mockResponse() {
 }
 
 describe("Billing Controller", () => {
-  it("should retrieve billing information successfully", async () => {
-    getAllBilling.mockResolvedValue({
-      summary: {
-        rent: 5000,
-
-        water: 200,
-
-        electricity: 500,
+  it("should retrieve billing records successfully", async () => {
+    fetchBillingInformation.mockResolvedValue([
+      {
+        id: "billing-001",
+        status: "Unpaid",
       },
-    });
-
-    const req = {};
-
-    const res = mockResponse();
-
-    await getBillingRecords(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(200);
-
-    expect(res.json).toHaveBeenCalled();
-  });
-
-  it("should return billing data correctly", async () => {
-    const billing = {
-      id: 1,
-
-      tenantId: 1,
-
-      totalAmount: 5700,
-    };
-
-    getAllBilling.mockResolvedValue(billing);
+    ]);
 
     const res = mockResponse();
 
     await getBillingRecords({}, res);
 
-    expect(res.json.mock.calls[0][0].data).toEqual(billing);
+    expect(res.status).toHaveBeenCalledWith(200);
+
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+
+      data: [
+        {
+          id: "billing-001",
+          status: "Unpaid",
+        },
+      ],
+    });
   });
 
-  it("should return an internal server error when billing retrieval fails", async () => {
-    getAllBilling.mockRejectedValue(
+  it("should return error when billing retrieval fails", async () => {
+    fetchBillingInformation.mockRejectedValue(
       new Error("Failed to retrieve billing information."),
     );
 

@@ -40,12 +40,28 @@ export default function BillingDashboard() {
   }
 
   return (
-    <div>
-      <h1>Billing Dashboard</h1>
+    <div
+      className="
+      max-w-6xl
+      mx-auto
+      p-6
+      "
+    >
+      <h1
+        className="
+        text-2xl
+        font-bold
+        mb-6
+        "
+      >
+        Billing Dashboard
+      </h1>
 
       <BillingSummaryCards billing={billing} />
 
-      <PaymentHistory payments={billing.payments || []} />
+      <div className="mt-6">
+        <PaymentHistory payments={billing.payments ?? []} />
+      </div>
     </div>
   );
 }

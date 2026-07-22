@@ -1,243 +1,73 @@
-import {
-  useState
-} from "react";
-
+import { useState } from "react";
 
 import {
-
   getAllBilling,
-
   getTenantBilling,
-
-  updateBillingStatus
-
+  updateBillingStatus,
 } from "../api/billingApi";
 
+export default function useBilling() {
+  const [billing, setBilling] = useState(null);
 
+  const [loading, setLoading] = useState(false);
 
+  const [error, setError] = useState(null);
 
-export default function useBilling(){
-
-
-  const [
-
-    billing,
-
-    setBilling
-
-  ] = useState(null);
-
-
-
-
-  const [
-
-    loading,
-
-    setLoading
-
-  ] = useState(false);
-
-
-
-
-  const [
-
-    error,
-
-    setError
-
-  ] = useState(null);
-
-
-
-
-
-
-
-  const fetchBilling = async()=>{
-
-
-    try{
-
-
+  const fetchBilling = async () => {
+    try {
       setLoading(true);
 
       setError(null);
 
+      const response = await getAllBilling();
 
-
-      const response =
-        await getAllBilling();
-
-
-
-      setBilling(
-        response.data
-      );
-
-
+      setBilling(response.data ?? response);
 
       return response;
-
-
-
-    }
-    catch(error){
-
-
-      setError(
-        error.message
-      );
-
+    } catch (error) {
+      setError(error.message);
 
       throw error;
-
-
-    }
-    finally{
-
-
+    } finally {
       setLoading(false);
-
-
     }
-
-
   };
 
-
-
-
-
-
-
-
-  const fetchTenantBilling = async(
-    tenantId
-  )=>{
-
-
-    try{
-
-
+  const fetchTenantBilling = async (tenantId) => {
+    try {
       setLoading(true);
 
       setError(null);
 
+      const response = await getTenantBilling(tenantId);
 
-
-      const response =
-        await getTenantBilling(
-          tenantId
-        );
-
-
-
-      setBilling(
-        response.data
-      );
-
-
+      setBilling(response.data ?? response);
 
       return response;
-
-
-
-    }
-    catch(error){
-
-
-      setError(
-        error.message
-      );
-
+    } catch (error) {
+      setError(error.message);
 
       throw error;
-
-
-    }
-    finally{
-
-
+    } finally {
       setLoading(false);
-
-
     }
-
-
   };
 
-
-
-
-
-
-
-
-
-  const markBillingPaid = async(
-    billingId
-  )=>{
-
-
-    try{
-
-
-      return await updateBillingStatus(
-
-        billingId,
-
-        "Paid"
-
-      );
-
-
-    }
-    catch(error){
-
-
-      setError(
-        error.message
-      );
-
-
-      throw error;
-
-
-    }
-
-
+  const markBillingPaid = async (id) => {
+    return await updateBillingStatus(id, "Paid");
   };
-
-
-
-
-
-
 
   return {
-
-
     billing,
-
 
     loading,
 
-
     error,
-
 
     fetchBilling,
 
-
     fetchTenantBilling,
 
-
-    markBillingPaid
-
-
+    markBillingPaid,
   };
-
-
 }

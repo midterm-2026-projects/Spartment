@@ -5,39 +5,35 @@ const riskAPI = axios.create({
 });
 
 /*
-|--------------------------------------------------------------------------
-| Get Tenant Risk Analysis
-|--------------------------------------------------------------------------
-|
-| Retrieves:
-| - Risk level
-| - Risk indicators
-| - Late payments
-| - Unpaid balance
-|
-|--------------------------------------------------------------------------
+==========================================
+GET TENANT RISK
+==========================================
 */
 
-export const fetchTenantRisk = async (tenantId) => {
-  const response = await riskAPI.get(`/tenant/${tenantId}`);
+export async function fetchTenantRisk(tenantId) {
+  try {
+    const response = await riskAPI.get(`/tenant/${tenantId}`);
 
-  return response.data;
-};
+    return response.data;
+  } catch (error) {
+    throw new Error("Failed to retrieve tenant risk.");
+  }
+}
 
 /*
-|--------------------------------------------------------------------------
-| Get High Risk Tenants
-|--------------------------------------------------------------------------
-|
-| Retrieves tenants classified as High Risk
-|
-|--------------------------------------------------------------------------
+==========================================
+GET HIGH RISK TENANTS
+==========================================
 */
 
-export const fetchHighRiskTenants = async () => {
-  const response = await riskAPI.get("/high-risk");
+export async function fetchHighRiskTenants() {
+  try {
+    const response = await riskAPI.get("/high-risk");
 
-  return response.data;
-};
+    return response.data;
+  } catch (error) {
+    throw new Error("Failed to retrieve high risk tenants.");
+  }
+}
 
 export default riskAPI;

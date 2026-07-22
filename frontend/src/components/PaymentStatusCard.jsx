@@ -1,19 +1,33 @@
 export default function PaymentStatusCard({ metrics = {} }) {
   return (
-    <div>
-      <h3>Payment Status</h3>
+    <section className="bg-white rounded-xl shadow p-6">
+      <h2 className="text-xl font-bold mb-5">Payment Status</h2>
 
-      <p>
-        Collected Revenue: <span>₱{metrics.collectedRevenue ?? 0}</span>
-      </p>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+          <h3>Collected Revenue</h3>
 
-      <p>
-        Pending Payments: <span>{metrics.pendingPayments ?? 0}</span>
-      </p>
+          <p>₱{metrics.collectedRevenue ?? 0}</p>
+        </div>
 
-      <p>
-        Late Payments: <span>{metrics.latePayments ?? 0}</span>
-      </p>
-    </div>
+        <div>
+          <h3>Verified Payments</h3>
+
+          <p>{metrics.verifiedPayments ?? 0}</p>
+        </div>
+
+        <div>
+          <h3>Pending Payments</h3>
+
+          <p>{metrics.pendingPayments ?? 0}</p>
+        </div>
+
+        <div>
+          <h3>Late Payments</h3>
+
+          <p>{metrics.latePayments ?? 0}</p>
+        </div>
+      </div>
+    </section>
   );
 }

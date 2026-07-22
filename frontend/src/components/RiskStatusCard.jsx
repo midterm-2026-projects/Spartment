@@ -8,7 +8,7 @@ function normalizeRiskLevel(risk) {
     return "Low Risk";
   }
 
-  if (/risk$/i.test(value)) {
+  if (value.toLowerCase().includes("risk")) {
     return value;
   }
 
@@ -16,13 +16,13 @@ function normalizeRiskLevel(risk) {
 }
 
 function getRiskClass(riskLevel) {
-  const normalized = riskLevel.toLowerCase();
+  const level = riskLevel.toLowerCase();
 
-  if (normalized.includes("high")) {
+  if (level.includes("high")) {
     return "bg-red-100 text-red-700";
   }
 
-  if (normalized.includes("medium")) {
+  if (level.includes("medium")) {
     return "bg-yellow-100 text-yellow-700";
   }
 
@@ -38,13 +38,34 @@ export default function RiskStatusCard({ risk }) {
     <section className="rounded-xl bg-white p-5 shadow">
       <h2 className="text-lg font-bold">Tenant Risk Status</h2>
 
-      <div className={`mt-4 rounded-lg px-4 py-2 font-bold ${riskClass}`}>
+      <div
+        className={`
+          mt-4
+          rounded-lg
+          px-4
+          py-2
+          font-bold
+          ${riskClass}
+        `}
+      >
         {riskLevel}
       </div>
 
-      {risk?.score !== undefined ? (
+      {risk?.score !== undefined && (
         <p className="mt-3 text-sm text-gray-600">Risk score: {risk.score}</p>
-      ) : null}
+      )}
+
+      {risk?.latePayments !== undefined && (
+        <p className="mt-2 text-sm text-gray-600">
+          Late Payments: {risk.latePayments}
+        </p>
+      )}
+
+      {risk?.unpaidBalance !== undefined && (
+        <p className="mt-2 text-sm text-gray-600">
+          Unpaid Balance: ₱{risk.unpaidBalance}
+        </p>
+      )}
     </section>
   );
 }

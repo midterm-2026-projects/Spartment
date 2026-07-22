@@ -2,22 +2,22 @@ import { render, screen, waitFor } from "@testing-library/react";
 
 import { describe, it, expect, vi } from "vitest";
 
-import RevenueDashboard from "../pages/RevenueDashboard";
+import RevenueDashboard from "../pages/RevenueDashboard.jsx";
 
-import { getDashboardMetrics } from "../api/dashboardApi";
+import { getDashboardMetrics } from "../api/dashboardApi.js";
 
-vi.mock("../api/dashboardApi", () => ({
+vi.mock("../api/dashboardApi.js", () => ({
   getDashboardMetrics: vi.fn(),
 }));
 
 describe("Revenue Dashboard", () => {
-  it("should retrieve dashboard KPI metrics from backend successfully", async () => {
+  it("should retrieve dashboard metrics successfully", async () => {
     getDashboardMetrics.mockResolvedValue({
       collectedRevenue: 50000,
 
-      pendingPayments: 5,
+      outstandingBalance: 30000,
 
-      latePayments: 2,
+      paymentRate: 85,
     });
 
     render(<RevenueDashboard />);
@@ -47,7 +47,7 @@ describe("Revenue Dashboard", () => {
     });
   });
 
-  it("should display error message when API fails", async () => {
+  it("should display error message", async () => {
     getDashboardMetrics.mockRejectedValue(new Error("Something went wrong."));
 
     render(<RevenueDashboard />);

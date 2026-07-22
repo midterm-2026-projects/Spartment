@@ -20,9 +20,23 @@ export async function getAllBilling() {
 
 /*
 ==========================================
-GET TENANT BILLING
+GET BILLING BY ID
 ==========================================
-GET /api/billing/tenant/:tenantId
+*/
+
+export async function getBillingById(id) {
+  try {
+    const response = await axios.get(`${API_URL}/${id}`);
+
+    return response.data;
+  } catch (error) {
+    throw new Error("Failed to retrieve billing.");
+  }
+}
+
+/*
+==========================================
+GET TENANT BILLING
 ==========================================
 */
 
@@ -44,11 +58,7 @@ GENERATE BILLING
 
 export async function generateBilling(billingData) {
   try {
-    const response = await axios.post(
-      `${API_URL}/generate`,
-
-      billingData,
-    );
+    const response = await axios.post(`${API_URL}/generate`, billingData);
 
     return response.data;
   } catch (error) {
@@ -62,19 +72,11 @@ UPDATE BILLING STATUS
 ==========================================
 */
 
-export async function updateBillingStatus(
-  billingId,
-
-  status,
-) {
+export async function updateBillingStatus(billingId, status) {
   try {
-    const response = await axios.patch(
-      `${API_URL}/${billingId}/status`,
-
-      {
-        status,
-      },
-    );
+    const response = await axios.patch(`${API_URL}/${billingId}/status`, {
+      status,
+    });
 
     return response.data;
   } catch (error) {

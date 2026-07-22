@@ -5,13 +5,14 @@
 | Responsible for:
 | - storing billing records
 | - retrieving billing records
-| - updating billing status
+| - updating billing records
 |
 | Business calculations are handled in service layer.
 |--------------------------------------------------------------------------
 */
 
-let billingRecords = [];
+import { supabase } from "../config/supabaseClient.js";
+
 
 /*
 |--------------------------------------------------------------------------
@@ -20,44 +21,92 @@ let billingRecords = [];
 */
 
 export async function createBillingRecord(billingData) {
-  const newBilling = {
-    id: billingRecords.length + 1,
 
-    tenantId: billingData.tenantId,
+  const { data, error } = await supabase
+    .from("billings")
+    .insert({
+      tenant_id: billingData.tenantId,
 
-    billingType: billingData.billingType || "initial",
+      room_id: billingData.roomId,
 
-    billingDate: billingData.billingDate,
+      billing_period: billingData.billingPeriod,
 
-    dueDate: billingData.dueDate,
+      due_date: billingData.dueDate,
 
-    rentAmount: billingData.rentAmount || 0,
+      total_amount: billingData.totalAmount,
 
-    waterBill: billingData.waterBill || 0,
+      paid_amount: billingData.paidAmount ?? 0,
 
-    electricityBill: billingData.electricityBill || 0,
+      remaining_balance:
+        billingData.remainingBalance ??
+        billingData.totalAmount,
 
-    totalAmount: billingData.totalAmount || 0,
+      status:
+        billingData.status ??
+        "Unpaid",
 
-    status: billingData.status || "Pending",
+      billing_type:
+        billingData.billingType ??
+        "Rent",
+    })
+    .select()
+    .single();
 
-    createdAt: new Date(),
-  };
 
-  billingRecords.push(newBilling);
+  if (error) {
+    throw new Error(
+      `Failed to create billing: ${error.message}`
+    );
+  }
 
-  return newBilling;
+
+  return data;
 }
+
 
 /*
 |--------------------------------------------------------------------------
-| Get Billing Information
+| Get All Billing Records
 |--------------------------------------------------------------------------
 */
 
 export async function getBillingInformation() {
-  return billingRecords;
+
+  const { data, error } = await supabase
+    .from("billings")
+    .select(`
+      *,
+      tenants(
+        id,
+        full_name,
+        email
+      ),
+      rooms(
+        id,
+        room_number
+      )
+    `)
+    .order(
+      "created_at",
+      {
+        ascending:false
+      }
+    );
+
+
+  if(error){
+
+    throw new Error(
+      `Failed to retrieve billing records: ${error.message}`
+    );
+
+  }
+
+
+  return data ?? [];
 }
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -65,9 +114,42 @@ export async function getBillingInformation() {
 |--------------------------------------------------------------------------
 */
 
-export async function getTenantBilling(tenantId) {
-  return billingRecords.filter((billing) => billing.tenantId == tenantId);
+export async function getTenantBilling(tenantId){
+
+  const { data,error } = await supabase
+    .from("billings")
+    .select(`
+      *,
+      rooms(
+        room_number
+      )
+    `)
+    .eq(
+      "tenant_id",
+      tenantId
+    )
+    .order(
+      "billing_period",
+      {
+        ascending:false
+      }
+    );
+
+
+  if(error){
+
+    throw new Error(
+      `Failed to retrieve tenant billing: ${error.message}`
+    );
+
+  }
+
+
+  return data ?? [];
+
 }
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -75,36 +157,103 @@ export async function getTenantBilling(tenantId) {
 |--------------------------------------------------------------------------
 */
 
-export async function getBillingById(billingId) {
-  return billingRecords.find((billing) => billing.id == billingId);
-}
+export async function getBillingById(
+  billingId
+){
 
-/*
-|--------------------------------------------------------------------------
-| Update Billing Status
-|--------------------------------------------------------------------------
-*/
+  const {data,error}=await supabase
+    .from("billings")
+    .select("*")
+    .eq(
+      "id",
+      billingId
+    )
+    .single();
 
-export async function updateBillingStatus(billingId, status) {
-  const billing = billingRecords.find((item) => item.id == billingId);
 
-  if (!billing) {
-    throw new Error("Billing record not found");
+
+  if(error){
+
+    throw new Error(
+      `Billing not found: ${error.message}`
+    );
+
   }
 
-  billing.status = status;
 
-  return billing;
+  return data;
+
 }
+
+
 
 /*
 |--------------------------------------------------------------------------
-| Reset Billing Data
-|--------------------------------------------------------------------------
-| Used for testing
+| Update Billing
 |--------------------------------------------------------------------------
 */
 
-export async function resetBillingRecords() {
-  billingRecords = [];
+export async function updateBillingRecord(
+  billingId,
+  updateData
+){
+
+  const {data,error}=await supabase
+    .from("billings")
+    .update(updateData)
+    .eq(
+      "id",
+      billingId
+    )
+    .select()
+    .single();
+
+
+
+  if(error){
+
+    throw new Error(
+      `Failed to update billing: ${error.message}`
+    );
+
+  }
+
+
+  return data;
+
+}
+
+
+
+/*
+|--------------------------------------------------------------------------
+| Get Revenue Data
+|--------------------------------------------------------------------------
+*/
+
+export async function getRevenueBillingRecords(){
+
+  const {data,error}=await supabase
+    .from("billings")
+    .select(`
+      id,
+      total_amount,
+      paid_amount,
+      status,
+      billing_period
+    `);
+
+
+
+  if(error){
+
+    throw new Error(
+      `Failed to retrieve revenue data: ${error.message}`
+    );
+
+  }
+
+
+  return data ?? [];
+
 }

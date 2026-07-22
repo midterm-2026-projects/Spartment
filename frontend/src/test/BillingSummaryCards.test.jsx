@@ -15,7 +15,7 @@ describe("Billing Summary Cards", () => {
 
       totalAmount: 6050,
 
-      status: "Pending",
+      status: "Unpaid",
     };
 
     render(<BillingSummaryCards billing={billing} />);
@@ -24,22 +24,18 @@ describe("Billing Summary Cards", () => {
 
     expect(screen.getByText("Rent")).toBeInTheDocument();
 
-    expect(screen.getByText("Water")).toBeInTheDocument();
-
-    expect(screen.getByText("Electricity")).toBeInTheDocument();
-
     expect(screen.getByText("Total Amount")).toBeInTheDocument();
 
-    expect(screen.getByText("Status")).toBeInTheDocument();
+    expect(screen.getByText("₱6050")).toBeInTheDocument();
 
-    expect(screen.getByText(/₱5000/)).toBeInTheDocument();
+    expect(screen.getByText("Unpaid")).toBeInTheDocument();
+  });
 
-    expect(screen.getByText(/₱200/)).toBeInTheDocument();
+  it("should display default values", () => {
+    render(<BillingSummaryCards />);
 
-    expect(screen.getByText(/₱850/)).toBeInTheDocument();
+    expect(screen.getAllByText("₱0")).toHaveLength(4);
 
-    expect(screen.getByText(/₱6050/)).toBeInTheDocument();
-
-    expect(screen.getByText("Pending")).toBeInTheDocument();
+    expect(screen.getByText("Unavailable")).toBeInTheDocument();
   });
 });

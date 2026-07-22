@@ -2,12 +2,9 @@ import { useEffect, useState } from "react";
 
 import { getDashboardMetrics } from "../api/dashboardApi";
 
-import Header from "../components/Header";
-import KpiCard from "../components/KpiCard";
-
 import Loading from "../components/Loading";
+
 import ErrorMessage from "../components/ErrorMessage";
-import EmptyState from "../components/EmptyState";
 
 export default function RevenueDashboard() {
   const [metrics, setMetrics] = useState(null);
@@ -23,9 +20,9 @@ export default function RevenueDashboard() {
 
         setError(null);
 
-        const response = await getDashboardMetrics();
+        const data = await getDashboardMetrics();
 
-        setMetrics(response);
+        setMetrics(data);
       } catch (error) {
         setError(error.message);
       } finally {
@@ -44,32 +41,26 @@ export default function RevenueDashboard() {
     return <ErrorMessage message={error} />;
   }
 
-  if (!metrics) {
-    return <EmptyState />;
-  }
-
   return (
     <div>
-      <Header />
+      <h1>Revenue Dashboard</h1>
 
       <div>
-        <KpiCard
-          title="Collected Revenue"
-          value={`₱${metrics.collectedRevenue}`}
-          subtitle="Paid Payments"
-        />
+        <h2>Collected Revenue</h2>
 
-        <KpiCard
-          title="Pending Payments"
-          value={metrics.pendingPayments}
-          subtitle="Awaiting Payment"
-        />
+        <p>₱{metrics?.collectedRevenue ?? 0}</p>
+      </div>
 
-        <KpiCard
-          title="Late Payments"
-          value={metrics.latePayments}
-          subtitle="Overdue Accounts"
-        />
+      <div>
+        <h2>Pending Payments</h2>
+
+        <p>{metrics?.pendingPayments ?? 0}</p>
+      </div>
+
+      <div>
+        <h2>Late Payments</h2>
+
+        <p>{metrics?.latePayments ?? 0}</p>
       </div>
     </div>
   );

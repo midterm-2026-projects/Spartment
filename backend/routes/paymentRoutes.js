@@ -1,101 +1,107 @@
 import express from "express";
 
-
 import {
-  confirmPaymentStatus,
+  createPayment,
+  verifyPaymentStatus,
+  rejectPaymentStatus,
   getTenantPayments,
   getRevenueMetrics,
 } from "../controller/paymentController.js";
 
-
-
-const router =
-express.Router();
-
-
-
-
+const router = express.Router();
 
 /*
 |--------------------------------------------------------------------------
-| Confirm Payment
+| Submit Payment
 |--------------------------------------------------------------------------
-| Admin manually confirms tenant payment.
+|
+| POST
+| /api/payment
+|
+| Tenant submits payment
 |
 | Example:
-| PATCH /api/payment/1/confirm
 |
-| Body:
 | {
-|   "paymentMethod": "Cash"
+|   billingId,
+|   tenantId,
+|   amount,
+|   paymentMethod,
+|   paymentReference
 | }
+|
 |--------------------------------------------------------------------------
 */
 
-
-router.patch(
-
-"/:id/confirm",
-
-confirmPaymentStatus
-
-);
-
-
-
-
-
-
+router.post("/", createPayment);
 
 /*
 |--------------------------------------------------------------------------
-| Get Tenant Payment History
+| Verify Payment
 |--------------------------------------------------------------------------
-| Example:
-| GET /api/payment/tenant/101
+|
+| PATCH
+| /api/payment/:id/verify
+|
+| Admin approves payment
+|
+| Actions:
+| - Update payment status
+| - Recalculate billing balance
+| - Update revenue
+| - Create notification
+|
 |--------------------------------------------------------------------------
 */
 
+router.patch("/:id/verify", verifyPaymentStatus);
 
-router.get(
+/*
+|--------------------------------------------------------------------------
+| Reject Payment
+|--------------------------------------------------------------------------
+|
+| PATCH
+| /api/payment/:id/reject
+|
+| Actions:
+| - Mark payment rejected
+| - Exclude from revenue
+| - Create notification
+|
+|--------------------------------------------------------------------------
+*/
 
-"/tenant/:tenantId",
+router.patch("/:id/reject", rejectPaymentStatus);
 
-getTenantPayments
+/*
+|--------------------------------------------------------------------------
+| Tenant Payment History
+|--------------------------------------------------------------------------
+|
+| GET
+| /api/payment/tenant/:tenantId
+|
+|--------------------------------------------------------------------------
+*/
 
-);
-
-
-
-
-
-
-
+router.get("/tenant/:tenantId", getTenantPayments);
 
 /*
 |--------------------------------------------------------------------------
 | Revenue Metrics
 |--------------------------------------------------------------------------
-| Used for admin dashboard analytics.
 |
-| Example:
-| GET /api/payment/metrics
+| GET
+| /api/payment/metrics
+|
+| Used by:
+| - Revenue Dashboard
+| - Analytics Dashboard
+|
 |--------------------------------------------------------------------------
 */
 
-
-router.get(
-
-"/metrics",
-
-getRevenueMetrics
-
-);
-
-
-
-
-
-
+router.get("/metrics", getRevenueMetrics);
 
 export default router;

@@ -9,25 +9,23 @@ export function useTenantRisk(tenantId) {
 
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (!tenantId) {
-      return;
+  const loadRisk = async () => {
+    if (!tenantId) return;
+
+    try {
+      setLoading(true);
+
+      const response = await fetchTenantRisk(tenantId);
+
+      setRisk(response.data);
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const loadRisk = async () => {
-      try {
-        setLoading(true);
-
-        const data = await fetchTenantRisk(tenantId);
-
-        setRisk(data.data);
-      } catch (error) {
-        setError(error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
+  useEffect(() => {
     loadRisk();
   }, [tenantId]);
 
@@ -37,6 +35,8 @@ export function useTenantRisk(tenantId) {
     loading,
 
     error,
+
+    reload: loadRisk,
   };
 }
 
@@ -51,9 +51,9 @@ export function useHighRiskTenants() {
     try {
       setLoading(true);
 
-      const data = await fetchHighRiskTenants();
+      const response = await fetchHighRiskTenants();
 
-      setTenants(data.data);
+      setTenants(response.data);
     } catch (error) {
       setError(error.message);
     } finally {

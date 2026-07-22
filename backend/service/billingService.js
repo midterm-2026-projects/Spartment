@@ -2,20 +2,19 @@ import {
   getBillingInformation,
   createBillingRecord,
   getTenantBilling,
-  updateBillingStatus,
+  getBillingById,
+  updateBillingRecord,
 } from "../model/billingModel.js";
 
 /*
 |--------------------------------------------------------------------------
-| Fetch Billing Information
+| Get All Billing
 |--------------------------------------------------------------------------
 */
 
 export async function fetchBillingInformation() {
   try {
-    const billing = await getBillingInformation();
-
-    return billing;
+    return await getBillingInformation();
   } catch (error) {
     throw new Error("Failed to retrieve billing information.");
   }
@@ -23,112 +22,90 @@ export async function fetchBillingInformation() {
 
 /*
 |--------------------------------------------------------------------------
-| Generate Billing
+| Create Billing
 |--------------------------------------------------------------------------
-| Handles:
-| - Initial tenant billing
-| - Monthly tenant billing
-|
-| Billing Formula:
-|
-| Total =
-| Rent + Water + Electricity
-|
-| Electricity amount is entered manually
-| by admin.
+| Business calculation only.
 |--------------------------------------------------------------------------
 */
 
 export async function generateBilling({
   tenantId,
 
-  billingType = "initial",
+  roomId,
 
-  rentAmount = 5000,
+  billingType = "Rent",
 
-  waterBill = 200,
+  totalAmount,
 
-  electricityBill = 0,
+  billingPeriod,
+
+  dueDate,
 }) {
-  try {
-    if (!tenantId) {
-      throw new Error("Tenant ID is required.");
-    }
-
-    const totalAmount = rentAmount + waterBill + electricityBill;
-
-    const billing = await createBillingRecord({
-      tenantId,
-
-      billingType,
-
-      billingDate: new Date(),
-
-      dueDate: generateDueDate(),
-
-      rentAmount,
-
-      waterBill,
-
-      electricityBill,
-
-      totalAmount,
-
-      status: "Pending",
-    });
-
-    return billing;
-  } catch (error) {
-    throw new Error(error.message);
+  if (!tenantId) {
+    throw new Error("Tenant ID is required.");
   }
+
+  if (!roomId) {
+    throw new Error("Room ID is required.");
+  }
+
+  if (totalAmount < 0) {
+    throw new Error("Billing amount cannot be negative.");
+  }
+
+  return await createBillingRecord({
+    tenantId,
+
+    roomId,
+
+    billingType,
+
+    billingPeriod: billingPeriod ?? new Date(),
+
+    dueDate,
+
+    totalAmount,
+
+    paidAmount: 0,
+
+    remainingBalance: totalAmount,
+
+    status: "Unpaid",
+  });
 }
 
 /*
 |--------------------------------------------------------------------------
-| Generate Due Date
-|--------------------------------------------------------------------------
-*/
-
-function generateDueDate() {
-  const date = new Date();
-
-  date.setDate(date.getDate() + 10);
-
-  return date;
-}
-
-/*
-|--------------------------------------------------------------------------
-| Get Tenant Billing History
+| Tenant Billing History
 |--------------------------------------------------------------------------
 */
 
 export async function getBillingByTenant(tenantId) {
-  try {
-    return await getTenantBilling(tenantId);
-  } catch (error) {
-    throw new Error("Failed to retrieve tenant billing.");
-  }
+  return await getTenantBilling(tenantId);
 }
 
 /*
 |--------------------------------------------------------------------------
-| Update Billing Status
+| Get Single Billing
 |--------------------------------------------------------------------------
 */
 
-export async function updateBillingPaymentStatus(
-  billingId,
+export async function fetchBillingById(billingId) {
+  return await getBillingById(billingId);
+}
 
-  status,
-) {
-  try {
-    return await updateBillingStatus(
-      billingId,
+/*
+|--------------------------------------------------------------------------
+| Update Billing
+|--------------------------------------------------------------------------
+*/
 
+export async function updateBillingPaymentStatus(billingId, status) {
+  return await updateBillingRecord(
+    billingId,
+
+    {
       status,
-    );
-  } catch (error) {
-    throw new Error("Failed to update billing status.");
-  }
+    },
+  );
 }

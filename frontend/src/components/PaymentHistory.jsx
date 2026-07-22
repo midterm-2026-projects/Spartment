@@ -9,17 +9,58 @@ export default function PaymentHistory({ payments = [] }) {
     return `${converted.getMonth() + 1}/${converted.getDate()}/${converted.getFullYear()}`;
   };
 
+  const getPaymentDate = (payment) => {
+    return payment.paymentDate ?? payment.payment_date ?? payment.date;
+  };
+
+  const getPaymentMethod = (payment) => {
+    return (
+      payment.paymentMethod ??
+      payment.payment_method ??
+      payment.method ??
+      "Cash"
+    );
+  };
+
+  const getPaymentStatus = (payment) => {
+    return (
+      payment.status ??
+      payment.payment_status ??
+      payment.verification_status ??
+      "Pending"
+    );
+  };
+
   const statusStyle = {
     Paid: "bg-green-100 text-green-700",
 
     Pending: "bg-yellow-100 text-yellow-700",
 
     Late: "bg-red-100 text-red-700",
+
+    Rejected: "bg-red-100 text-red-700",
+
+    Verified: "bg-green-100 text-green-700",
   };
 
   return (
-    <div className="bg-white rounded-xl shadow p-6">
-      <h2 className="font-bold text-xl mb-4">Payment History</h2>
+    <div
+      className="
+      bg-white
+      rounded-xl
+      shadow
+      p-6
+      "
+    >
+      <h2
+        className="
+        font-bold
+        text-xl
+        mb-4
+        "
+      >
+        Payment History
+      </h2>
 
       <table className="w-full">
         <thead>
@@ -37,35 +78,43 @@ export default function PaymentHistory({ payments = [] }) {
         <tbody>
           {payments.length > 0 ? (
             payments.map((payment, index) => (
-              <tr key={payment.id || index}>
-                <td>{formatDate(payment.paymentDate)}</td>
+              <tr key={payment.id ?? index}>
+                <td>{formatDate(getPaymentDate(payment))}</td>
 
                 <td>₱{payment.amount ?? 0}</td>
 
-                <td>{payment.paymentMethod || "Cash"}</td>
+                <td>{getPaymentMethod(payment)}</td>
 
                 <td>
                   <span
                     className={`
-                      px-3 
-                      py-1 
-                      rounded-full 
-                      text-sm
-                      font-semibold
-                      ${
-                        statusStyle[payment.status] ||
-                        "bg-gray-100 text-gray-700"
-                      }
+                    px-3
+                    py-1
+                    rounded-full
+                    text-sm
+                    font-semibold
+
+                    ${
+                      statusStyle[getPaymentStatus(payment)] ??
+                      "bg-gray-100 text-gray-700"
+                    }
+
                     `}
                   >
-                    {payment.status || "Pending"}
+                    {getPaymentStatus(payment)}
                   </span>
                 </td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan="4" className="text-center py-4">
+              <td
+                colSpan="4"
+                className="
+              text-center
+              py-4
+              "
+              >
                 No payment history found.
               </td>
             </tr>

@@ -1,97 +1,228 @@
-let payments = [];
-
 /*
 |--------------------------------------------------------------------------
-| Create Payment Record
+| Payment Model
+|--------------------------------------------------------------------------
+| Responsible for:
+| - creating payments
+| - retrieving payments
+| - updating payment status
 |--------------------------------------------------------------------------
 */
 
-export async function createPaymentRecord(data) {
-  const payment = {
-    id: payments.length + 1,
 
-    tenantId: data.tenantId,
+import { supabase } from "../config/supabaseClient.js";
 
-    billingId: data.billingId,
 
-    amount: data.amount,
-
-    paymentMethod: data.paymentMethod || "Cash",
-
-    paymentDate: null,
-
-    status: "Pending",
-  };
-
-  payments.push(payment);
-
-  return payment;
-}
 
 /*
 |--------------------------------------------------------------------------
-| Find Payment
+| Create Payment
 |--------------------------------------------------------------------------
 */
 
-export async function getPaymentById(id) {
-  return payments.find((payment) => payment.id == id);
+export async function createPaymentRecord(data){
+
+
+  const {result,error}=await supabase
+    .from("payments")
+    .insert({
+
+      billing_id:data.billingId,
+
+      tenant_id:data.tenantId,
+
+      amount:data.amount,
+
+      payment_method:
+        data.paymentMethod ??
+        "Cash",
+
+      payment_reference:
+        data.paymentReference,
+
+      verification_status:
+        "Pending",
+
+      payment_status:
+        "Pending",
+
+      payment_date:
+        data.paymentDate ??
+        new Date(),
+
+    })
+    .select()
+    .single();
+
+
+
+  if(error){
+
+    throw new Error(
+      `Failed to create payment: ${error.message}`
+    );
+
+  }
+
+
+  return result;
+
 }
+
+
 
 /*
 |--------------------------------------------------------------------------
-| Update Payment Status
+| Get Payment By ID
+|--------------------------------------------------------------------------
+*/
+
+export async function getPaymentById(
+  paymentId
+){
+
+
+  const {data,error}=await supabase
+    .from("payments")
+    .select("*")
+    .eq(
+      "id",
+      paymentId
+    )
+    .single();
+
+
+
+  if(error){
+
+    throw new Error(
+      `Payment not found: ${error.message}`
+    );
+
+  }
+
+
+  return data;
+
+}
+
+
+
+/*
+|--------------------------------------------------------------------------
+| Update Payment
 |--------------------------------------------------------------------------
 */
 
 export async function updatePaymentStatus(
-  id,
+  paymentId,
+  updateData
+){
 
-  data,
-) {
-  const payment = payments.find((payment) => payment.id == id);
+  const {data,error}=await supabase
+    .from("payments")
+    .update(updateData)
+    .eq(
+      "id",
+      paymentId
+    )
+    .select()
+    .single();
 
-  if (!payment) {
-    throw new Error("Payment not found.");
+
+
+  if(error){
+
+    throw new Error(
+      `Failed to update payment: ${error.message}`
+    );
+
   }
 
-  payment.status = data.status;
 
-  payment.paymentMethod = data.paymentMethod;
+  return data;
 
-  payment.paymentDate = data.paymentDate;
-
-  return payment;
 }
+
+
 
 /*
 |--------------------------------------------------------------------------
 | Tenant Payment History
 |--------------------------------------------------------------------------
-|
-| Used by:
-| - Payment History
-| - Risk Detection
-|
-|--------------------------------------------------------------------------
 */
 
-export async function getPaymentsByTenant(tenantId) {
-  return payments.filter((payment) => payment.tenantId == tenantId);
+export async function getPaymentsByTenant(
+  tenantId
+){
+
+
+  const {data,error}=await supabase
+    .from("payments")
+    .select(`
+      *,
+      billings(
+        billing_period,
+        total_amount
+      )
+    `)
+    .eq(
+      "tenant_id",
+      tenantId
+    )
+    .order(
+      "payment_date",
+      {
+        ascending:false
+      }
+    );
+
+
+  if(error){
+
+    throw new Error(
+      `Failed to retrieve tenant payments: ${error.message}`
+    );
+
+  }
+
+
+  return data ?? [];
+
 }
+
+
 
 /*
 |--------------------------------------------------------------------------
 | All Payments
 |--------------------------------------------------------------------------
-|
-| Used by:
-| - Revenue Analytics
-| - Risk Detection
-|
-|--------------------------------------------------------------------------
 */
 
-export async function getPayments() {
-  return payments;
+export async function getPayments(){
+
+
+  const {data,error}=await supabase
+    .from("payments")
+    .select("*")
+    .order(
+      "created_at",
+      {
+        ascending:false
+      }
+    );
+
+
+
+  if(error){
+
+    throw new Error(
+      `Failed to retrieve payments: ${error.message}`
+    );
+
+  }
+
+
+  return data ?? [];
+
 }

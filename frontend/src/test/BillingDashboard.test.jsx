@@ -13,13 +13,15 @@ describe("Billing Dashboard", () => {
     render(<BillingDashboard />);
 
     await waitFor(() => {
+      expect(screen.getByText("Billing Summary")).toBeInTheDocument();
+
       expect(screen.getAllByText(/6050/)).toHaveLength(2);
 
-      expect(screen.getByText("Pending")).toBeInTheDocument();
+      expect(screen.getByText("Unpaid")).toBeInTheDocument();
     });
   });
 
-  it("should display rent and utility charges correctly", async () => {
+  it("should display billing charges correctly", async () => {
     render(<BillingDashboard />);
 
     await waitFor(() => {
@@ -31,11 +33,11 @@ describe("Billing Dashboard", () => {
     });
   });
 
-  it("should display billing status correctly", async () => {
+  it("should display payment history", async () => {
     render(<BillingDashboard />);
 
     await waitFor(() => {
-      expect(screen.getByText("Pending")).toBeInTheDocument();
+      expect(screen.getByText("Payment History")).toBeInTheDocument();
     });
   });
 
