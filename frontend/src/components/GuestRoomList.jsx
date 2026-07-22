@@ -23,25 +23,20 @@ export default function GuestRoomList({
     );
   }
 
-  return (
-    <section>
-      <div className="mb-5">
-        <h2 className="text-2xl font-bold">Available Rooms</h2>
+  const floors = rooms.reduce((groups, room) => {
+    const label = room.floor || room.floor_number || String(room.roomNumber || room.room_number || "").charAt(0) || "Other";
+    groups[label] = [...(groups[label] || []), room];
+    return groups;
+  }, {});
 
-        <p className="mt-1 text-gray-500">
-          Select an available room to submit an inquiry.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-        {rooms.map((room) => (
-          <GuestRoomCard
-            key={room.id || room.roomId}
-            room={room}
-            onInquiry={onInquiry}
-          />
+  return Object.entries(floors).map(([floor, floorRooms]) => (
+    <section className="room-floor" key={floor}>
+      <h2>Floor <span>{floor}</span></h2>
+      <div className="room-grid">
+        {floorRooms.map((room) => (
+          <GuestRoomCard key={room.id || room.roomId} room={room} onInquiry={onInquiry} />
         ))}
       </div>
     </section>
-  );
+  ));
 }

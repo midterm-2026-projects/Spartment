@@ -104,12 +104,12 @@ export default function AddTenantModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 add-tenant-backdrop"
       role="dialog"
       aria-modal="true"
       aria-labelledby="add-tenant-title"
     >
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
+      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-xl add-tenant-dialog">
         <div className="mb-5">
           <h2 id="add-tenant-title" className="text-2xl font-bold">
             Add Tenant

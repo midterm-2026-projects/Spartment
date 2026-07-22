@@ -251,8 +251,13 @@ describe("Rental Workflow", () => {
 
       expect(generateBilling).toHaveBeenCalledWith({
         tenantId,
+        roomId,
 
-        billingType: "initial",
+        totalAmount: 0,
+
+        billingPeriod: expect.any(String),
+
+        dueDate: expect.any(String),
       });
     });
   });

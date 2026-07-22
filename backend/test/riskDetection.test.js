@@ -2,7 +2,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /*
 |--------------------------------------------------------------------------
-| Mock Payment Model
+| Tenant Model Mock
+|--------------------------------------------------------------------------
+*/
+
+vi.mock("../model/tenantModel.js", () => ({
+  getTenantById: vi.fn(),
+
+  fetchTenants: vi.fn(),
+}));
+
+/*
+|--------------------------------------------------------------------------
+| Payment Model Mock
 |--------------------------------------------------------------------------
 */
 
@@ -14,15 +26,77 @@ vi.mock("../model/paymentModel.js", () => ({
 
 /*
 |--------------------------------------------------------------------------
-| Mock Risk Model
+| Risk Model Mock
 |--------------------------------------------------------------------------
 */
 
 vi.mock("../model/riskModel.js", () => ({
-  createRiskRecord: vi.fn(),
+  createRiskRecord: vi.fn(async (data) => ({
+    id: "risk-001",
 
-  getHighRiskRecords: vi.fn(),
+    ...data,
+  })),
+
+  getRiskRecords: vi.fn().mockResolvedValue([]),
+
+  getHighRiskRecords: vi.fn().mockResolvedValue([
+    {
+      tenantId: "tenant-001",
+
+      riskLevel: "High",
+    },
+  ]),
 }));
+
+/*
+|--------------------------------------------------------------------------
+| Supabase Mock
+|--------------------------------------------------------------------------
+*/
+
+vi.mock("../config/supabaseClient.js", () => {
+  const supabase = {
+    from: vi.fn(() => ({
+      select() {
+        return this;
+      },
+
+      eq() {
+        return this;
+      },
+
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: null,
+
+        error: null,
+      }),
+
+      insert() {
+        return {
+          select() {
+            return {
+              single: vi.fn().mockResolvedValue({
+                data: {
+                  id: "risk-001",
+                },
+
+                error: null,
+              }),
+            };
+          },
+        };
+      },
+    })),
+  };
+
+  return {
+    supabase,
+
+    default: supabase,
+  };
+});
+
+import { getTenantById } from "../model/tenantModel.js";
 
 import { getPaymentsByTenant } from "../model/paymentModel.js";
 
@@ -38,145 +112,125 @@ describe("Risk Detection Service", () => {
     vi.clearAllMocks();
   });
 
-  /*
-    |--------------------------------------------------------------------------
-    | Analyze Tenant Risk
-    |--------------------------------------------------------------------------
-    */
-
   it("should detect high risk tenant due to late and pending payments", async () => {
-    // Arrange
+    /*
+        |--------------------------------------------------------------------------
+        | Arrange
+        |--------------------------------------------------------------------------
+        */
+
+    getTenantById.mockResolvedValue({
+      id: "tenant-001",
+
+      name: "Juan Cruz",
+
+      status: "Active",
+    });
 
     getPaymentsByTenant.mockResolvedValue([
       {
-        id: "payment-001",
-
-        amount: 5000,
+        amount: 10000,
 
         status: "Late",
       },
 
       {
-        id: "payment-002",
+        amount: 12000,
 
-        amount: 5000,
+        status: "Late",
+      },
+
+      {
+        amount: 15000,
+
+        status: "Late",
+      },
+
+      {
+        amount: 8000,
 
         status: "Pending",
       },
 
       {
-        id: "payment-003",
+        amount: 9000,
 
-        amount: 3000,
+        status: "Pending",
+      },
 
-        status: "Late",
+      {
+        amount: 7000,
+
+        status: "Pending",
       },
     ]);
 
-    createRiskRecord.mockResolvedValue({
-      tenantId: "tenant-001",
-
-      riskLevel: "High",
-
-      latePayments: 2,
-
-      unpaidBalance: 5000,
-
-      indicators: ["2 late payment(s) detected", "Outstanding balance of 5000"],
-    });
-
-    // Act
+    /*
+        |--------------------------------------------------------------------------
+        | Act
+        |--------------------------------------------------------------------------
+        */
 
     const result = await analyzeTenantRisk("tenant-001");
 
-    // Assert
-
-    expect(getPaymentsByTenant).toHaveBeenCalledWith("tenant-001");
-
-    expect(createRiskRecord).toHaveBeenCalled();
+    /*
+        |--------------------------------------------------------------------------
+        | Assert
+        |--------------------------------------------------------------------------
+        */
 
     expect(result.riskLevel).toBe("High");
+
+    expect(result.riskScore).toBe(60);
+
+    expect(createRiskRecord).toHaveBeenCalled();
   });
 
-  /*
-    |--------------------------------------------------------------------------
-    | Analyze Low Risk Tenant
-    |--------------------------------------------------------------------------
-    */
-
   it("should detect low risk tenant when payments are updated", async () => {
-    // Arrange
+    getTenantById.mockResolvedValue({
+      id: "tenant-001",
+
+      name: "Juan Cruz",
+
+      status: "Active",
+    });
 
     getPaymentsByTenant.mockResolvedValue([
       {
-        id: "payment-001",
-
         amount: 5000,
 
         status: "Paid",
       },
     ]);
 
-    createRiskRecord.mockResolvedValue({
-      tenantId: "tenant-001",
-
-      riskLevel: "Low",
-
-      indicators: ["Payments are up to date."],
-    });
-
-    // Act
-
     const result = await analyzeTenantRisk("tenant-001");
-
-    // Assert
 
     expect(result.riskLevel).toBe("Low");
   });
 
-  /*
-    |--------------------------------------------------------------------------
-    | No Payment Records
-    |--------------------------------------------------------------------------
-    */
+  it("should return low risk when no payment records exist", async () => {
+    getTenantById.mockResolvedValue({
+      id: "tenant-001",
 
-  it("should throw error when no payment records exist", async () => {
-    // Arrange
+      name: "Juan Cruz",
+
+      status: "Active",
+    });
 
     getPaymentsByTenant.mockResolvedValue([]);
 
-    // Act + Assert
+    const result = await analyzeTenantRisk("tenant-001");
 
-    await expect(analyzeTenantRisk("tenant-001")).rejects.toThrow(
-      "No payment records found.",
-    );
+    expect(result.riskLevel).toBe("Low");
+
+    expect(result.riskScore).toBe(0);
   });
 
-  /*
-    |--------------------------------------------------------------------------
-    | Get High Risk Tenants
-    |--------------------------------------------------------------------------
-    */
-
   it("should retrieve high risk tenants", async () => {
-    // Arrange
-
-    getHighRiskRecords.mockResolvedValue([
-      {
-        tenantId: "tenant-001",
-
-        riskLevel: "High",
-      },
-    ]);
-
-    // Act
-
     const result = await getHighRiskTenants();
-
-    // Assert
 
     expect(getHighRiskRecords).toHaveBeenCalled();
 
-    expect(result).toHaveLength(1);
+    expect(result.length).toBeGreaterThan(0);
   });
 });

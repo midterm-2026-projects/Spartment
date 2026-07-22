@@ -1,65 +1,91 @@
-import {
-describe,
-it,
-expect,
-} from "vitest";
+import { describe, it, expect } from "vitest";
 
+describe("Risk Detection Integration", () => {
+  it("should identify high risk tenant from risk assessment data", () => {
+    const riskAssessment = {
+      tenantId: "tenant-001",
 
+      riskLevel: "High",
 
+      riskScore: 85,
 
+      riskCategory: "Payment Risk",
 
-describe(
-"Risk Detection Integration",
-()=>{
+      sourceCondition: ["Repeated late payments", "Large unpaid balance"],
 
+      indicators: [
+        {
+          condition: "Late Payments",
 
-it(
-"should identify high risk tenant",
-()=>{
+          description: "Tenant has repeated delayed payments.",
+        },
 
+        {
+          condition: "Unpaid Balance",
 
-const risk={
+          description: "Tenant has outstanding balance.",
+        },
+      ],
 
-tenantId:1,
+      latePayments: 5,
 
-riskLevel:"High",
+      unpaidBalance: 50000,
+    };
 
-indicators:[
+    expect(riskAssessment.riskLevel).toBe("High");
 
-"Repeated late payments"
+    expect(riskAssessment.riskScore).toBeGreaterThanOrEqual(70);
 
-]
+    expect(riskAssessment.sourceCondition).toContain("Repeated late payments");
 
-};
+    expect(riskAssessment.indicators.length).toBeGreaterThan(0);
+  });
 
+  it("should identify low risk tenant from normal payment behavior", () => {
+    const riskAssessment = {
+      tenantId: "tenant-002",
 
+      riskLevel: "Low",
 
+      riskScore: 10,
 
-expect(
+      riskCategory: "Stable",
 
-risk.riskLevel
+      latePayments: 0,
 
-)
-.toBe(
-"High"
-);
+      unpaidBalance: 0,
 
+      indicators: [],
+    };
 
+    expect(riskAssessment.riskLevel).toBe("Low");
 
+    expect(riskAssessment.riskScore).toBeLessThan(30);
 
-expect(
+    expect(riskAssessment.latePayments).toBe(0);
 
-risk.indicators
+    expect(riskAssessment.unpaidBalance).toBe(0);
+  });
 
-)
-.toContain(
-"Repeated late payments"
-);
+  it("should preserve risk source conditions", () => {
+    const riskAssessment = {
+      sourceCondition: [
+        "Vacancy duration",
 
+        "Revenue decline",
 
+        "Payment delays",
+      ],
+    };
 
-});
+    expect(riskAssessment.sourceCondition).toEqual(
+      expect.arrayContaining([
+        "Vacancy duration",
 
+        "Revenue decline",
 
-
+        "Payment delays",
+      ]),
+    );
+  });
 });

@@ -44,7 +44,7 @@ describe("Billing Dashboard", () => {
   it("should display error message when billing API fails", async () => {
     server.use(
       http.get(
-        "http://localhost:5000/api/billing/tenant/:tenantId",
+        "http://localhost:5000/api/billing",
 
         () => {
           return HttpResponse.error();

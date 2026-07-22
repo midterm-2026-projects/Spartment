@@ -57,11 +57,6 @@ export async function getInquiryRecords() {
         room_type,
         monthly_rent,
         status
-      ),
-      reviewer:users!inquiries_reviewed_by_fkey (
-        id,
-        name,
-        email
       )
     `)
     .order("created_at", {

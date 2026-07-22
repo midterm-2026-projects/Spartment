@@ -5,7 +5,8 @@ const supabaseUrl = process.env.SUPABASE_URL;
 
 const supabaseBackendKey =
   process.env.SUPABASE_SECRET_KEY ||
-  process.env.SUPABASE_SERVICE_ROLE_KEY;
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  process.env.SUPABASE_ANON_KEY;
 
 if (!supabaseUrl) {
   throw new Error(
@@ -15,11 +16,11 @@ if (!supabaseUrl) {
 
 if (!supabaseBackendKey) {
   throw new Error(
-    "SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY is missing from the backend environment variables.",
+    "SUPABASE_SECRET_KEY, SUPABASE_SERVICE_ROLE_KEY, or SUPABASE_ANON_KEY is missing from the backend environment variables.",
   );
 }
 
-const supabase = createClient(
+export const supabase = createClient(
   supabaseUrl,
   supabaseBackendKey,
   {

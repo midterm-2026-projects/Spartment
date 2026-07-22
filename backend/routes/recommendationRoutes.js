@@ -1,21 +1,27 @@
-import {
-  Router,
-} from "express";
+import { Router } from "express";
 
+import { getRecommendationsController } from "../controller/recommendationController.js";
 
-import {
-  getRecommendationsController,
-} from "../controller/recommendationController.js";
+const router = Router();
 
+/*
+|--------------------------------------------------------------------------
+| Get Active Recommendations
+|--------------------------------------------------------------------------
+|
+| GET
+| /api/recommendation
+|
+| Returns:
+|
+| - priority
+| - category
+| - related tenant
+| - related risk condition
+|
+|--------------------------------------------------------------------------
+*/
 
-const router =
-  Router();
-
-
-router.get(
-  "/recommendations",
-  getRecommendationsController
-);
-
+router.get("/", getRecommendationsController);
 
 export default router;

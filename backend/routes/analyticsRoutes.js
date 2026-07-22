@@ -3,6 +3,8 @@ import express from "express";
 import {
   getAnalytics,
 } from "../controller/analyticsController.js";
+import authenticateUser from "../middleware/authMiddleware.js";
+import { requireAdmin } from "../middleware/roleMiddleware.js";
 
 
 const router =
@@ -11,6 +13,8 @@ const router =
 
 router.get(
   "/",
+  authenticateUser,
+  requireAdmin,
   getAnalytics
 );
 

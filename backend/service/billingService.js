@@ -4,6 +4,7 @@ import {
   getTenantBilling,
   getBillingById,
   updateBillingRecord,
+  upsertUtilityBilling,
 } from "../model/billingModel.js";
 
 /*
@@ -108,4 +109,9 @@ export async function updateBillingPaymentStatus(billingId, status) {
       status,
     },
   );
+}
+
+export async function saveUtilityBilling(billingId, amounts) {
+  if (!billingId) throw new Error("Billing ID is required.");
+  return upsertUtilityBilling(billingId, amounts);
 }

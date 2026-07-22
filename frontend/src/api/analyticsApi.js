@@ -1,15 +1,8 @@
-import axios from "axios";
-
-const API_URL = "http://localhost:5000/analytics";
-
 export async function getAnalytics() {
-  try {
-    const response = await axios.get(API_URL);
-
-    return response.data;
-  } catch (error) {
-    console.error("Analytics API Error:", error);
-
-    throw new Error("Failed to retrieve analytics information.");
-  }
+  const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || "/api"}/analytics`, {
+    headers: { Authorization: `Bearer ${localStorage.getItem("token") || ""}` },
+  });
+  const result = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(result?.message || "Failed to retrieve analytics information.");
+  return result?.data || result;
 }

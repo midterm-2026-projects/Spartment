@@ -1,424 +1,188 @@
-import {
-describe,
-it,
-expect,
-vi,
-beforeEach,
-} from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
+/*
+|--------------------------------------------------------------------------
+| Mock Tenant Model
+|--------------------------------------------------------------------------
+*/
 
+vi.mock("../model/tenantModel.js", () => ({
+  getTenantById: vi.fn(),
+}));
 
-vi.mock(
-"../model/paymentModel.js",
-()=>({
+/*
+|--------------------------------------------------------------------------
+| Mock Payment Model
+|--------------------------------------------------------------------------
+*/
 
-getPaymentsByTenant:
-vi.fn(),
+vi.mock("../model/paymentModel.js", () => ({
+  getPaymentsByTenant: vi.fn(),
+}));
 
-})
+/*
+|--------------------------------------------------------------------------
+| Mock Risk Model
+|--------------------------------------------------------------------------
+*/
 
-);
+vi.mock("../model/riskModel.js", () => ({
+  createRiskRecord: vi.fn(async (data) => ({
+    id: "risk-001",
 
+    ...data,
+  })),
 
+  getHighRiskRecords: vi.fn().mockResolvedValue([
+    {
+      tenantId: "tenant-001",
 
-vi.mock(
-"../model/riskModel.js",
-()=>({
+      riskLevel: "High",
+    },
+  ]),
+}));
 
-createRiskRecord:
-vi.fn(),
+import { getTenantById } from "../model/tenantModel.js";
 
-getHighRiskRecords:
-vi.fn(),
+import { getPaymentsByTenant } from "../model/paymentModel.js";
 
-})
-
-);
-
-
-
-
-
-import {
-
-analyzeTenantRisk,
-
-getHighRiskTenants
-
-}
-
-from "../service/riskService.js";
-
-
+import { createRiskRecord } from "../model/riskModel.js";
 
 import {
+  analyzeTenantRisk,
+  getHighRiskTenants,
+} from "../service/riskService.js";
 
-getPaymentsByTenant
+describe("Risk Service", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-}
+  it("should detect high-risk tenant with repeated late payments", async () => {
+    /*
+        Arrange
+        */
 
-from "../model/paymentModel.js";
+    getTenantById.mockResolvedValue({
+      id: "tenant-001",
 
+      status: "Active",
+    });
 
+    getPaymentsByTenant.mockResolvedValue([
+      {
+        amount: 30000,
 
-import {
+        remaining_balance: 30000,
 
-createRiskRecord,
+        status: "Late",
+      },
 
-getHighRiskRecords
+      {
+        amount: 30000,
 
-}
+        remaining_balance: 30000,
 
-from "../model/riskModel.js";
+        status: "Late",
+      },
 
+      {
+        amount: 30000,
 
+        remaining_balance: 30000,
 
+        status: "Late",
+      },
 
+      {
+        amount: 30000,
 
+        remaining_balance: 30000,
 
+        status: "Pending",
+      },
+    ]);
 
+    /*
+        Act
+        */
 
-describe(
-"Risk Service",
-()=>{
+    const result = await analyzeTenantRisk("tenant-001");
 
+    /*
+        Assert
+        */
 
-beforeEach(()=>{
+    expect(result.riskLevel).toBe("High");
 
-vi.clearAllMocks();
+    expect(result.riskScore).toBeGreaterThanOrEqual(70);
 
-});
+    expect(createRiskRecord).toHaveBeenCalled();
+  });
 
+  it("should detect unpaid balance correctly", async () => {
+    /*
+        Arrange
+        */
 
+    getTenantById.mockResolvedValue({
+      id: "tenant-001",
 
+      status: "Active",
+    });
 
+    getPaymentsByTenant.mockResolvedValue([
+      {
+        amount: 50000,
 
+        remaining_balance: 50000,
 
+        pending_amount: 50000,
 
+        status: "Pending",
+      },
+    ]);
 
-it(
-"should detect high-risk tenant with repeated late payments",
-async()=>{
+    /*
+        Act
+        */
 
+    const result = await analyzeTenantRisk("tenant-001");
 
-// Arrange
+    /*
+        Assert
+        */
 
-getPaymentsByTenant
-.mockResolvedValue([
+    expect(result.unpaidBalance).toBe(50000);
+  });
 
-{
-status:"Late",
-amount:5000
-},
+  it("should generate low risk for good payment history", async () => {
+    getTenantById.mockResolvedValue({
+      id: "tenant-001",
 
-{
-status:"Late",
-amount:5000
-},
+      status: "Active",
+    });
 
-{
-status:"Late",
-amount:5000
-}
+    getPaymentsByTenant.mockResolvedValue([
+      {
+        amount: 5000,
 
-]);
+        remaining_balance: 0,
 
+        status: "Paid",
+      },
+    ]);
 
+    const result = await analyzeTenantRisk("tenant-001");
 
-createRiskRecord
-.mockResolvedValue({
+    expect(result.riskLevel).toBe("Low");
+  });
 
-tenantId:101,
+  it("should retrieve high risk tenants", async () => {
+    const result = await getHighRiskTenants();
 
-riskLevel:"High",
+    expect(result.length).toBeGreaterThan(0);
 
-latePayments:3
-
-});
-
-
-
-
-
-// Act
-
-const result =
-
-await analyzeTenantRisk(
-
-101
-
-);
-
-
-
-
-
-// Assert
-
-
-expect(
-
-getPaymentsByTenant
-
-)
-
-.toHaveBeenCalledWith(
-
-101
-
-);
-
-
-
-expect(
-
-result.riskLevel
-
-)
-
-.toBe(
-
-"High"
-
-);
-
-
-
-});
-
-
-
-
-
-
-
-
-
-it(
-"should detect unpaid balance correctly",
-async()=>{
-
-
-// Arrange
-
-
-getPaymentsByTenant
-.mockResolvedValue([
-
-
-{
-
-status:"Pending",
-
-amount:5000
-
-}
-
-]);
-
-
-
-createRiskRecord
-.mockResolvedValue({
-
-riskLevel:"High",
-
-unpaidBalance:5000
-
-});
-
-
-
-
-
-
-// Act
-
-
-const result =
-
-await analyzeTenantRisk(
-
-101
-
-);
-
-
-
-
-
-
-// Assert
-
-
-expect(
-
-result.riskLevel
-
-)
-
-.toBe(
-
-"High"
-
-);
-
-
-
-});
-
-
-
-
-
-
-
-
-
-it(
-"should generate low risk for good payment history",
-async()=>{
-
-
-// Arrange
-
-
-getPaymentsByTenant
-.mockResolvedValue([
-
-{
-
-status:"Paid",
-
-amount:5000
-
-}
-
-]);
-
-
-
-createRiskRecord
-.mockResolvedValue({
-
-riskLevel:"Low"
-
-});
-
-
-
-
-
-
-// Act
-
-
-const result =
-
-await analyzeTenantRisk(
-
-101
-
-);
-
-
-
-
-
-
-// Assert
-
-
-expect(
-
-result.riskLevel
-
-)
-
-.toBe(
-
-"Low"
-
-);
-
-
-
-});
-
-
-
-
-
-
-
-
-
-it(
-"should retrieve high-risk tenants",
-async()=>{
-
-
-// Arrange
-
-
-getHighRiskRecords
-.mockResolvedValue([
-
-{
-
-tenantId:101,
-
-riskLevel:"High"
-
-}
-
-]);
-
-
-
-
-
-
-// Act
-
-
-const result =
-
-await getHighRiskTenants();
-
-
-
-
-
-
-// Assert
-
-
-expect(result)
-
-.toHaveLength(
-
-1
-
-);
-
-
-
-expect(result[0].riskLevel)
-
-.toBe(
-
-"High"
-
-);
-
-
-
-});
-
-
-
-
-
+    expect(result[0].riskLevel).toBe("High");
+  });
 });

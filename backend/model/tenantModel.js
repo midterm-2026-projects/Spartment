@@ -24,7 +24,7 @@ const tenantSelect = `
     monthly_rent,
     status
   ),
-  inquiry:inquiries (
+  inquiry:inquiries!tenants_inquiry_fk (
     id,
     status,
     move_in_date
@@ -40,24 +40,48 @@ export async function createTenant({
   username,
   passwordHash,
   createdBy,
+  moveInDate,
 }) {
-  const { data, error } = await supabase.rpc(
-    "create_tenant_from_approved_inquiry",
-    {
-      p_inquiry_id: inquiryId,
-      p_full_name: fullName,
-      p_email: email,
-      p_contact: contact,
-      p_room_id: roomId,
-      p_username: username,
-      p_password_hash: passwordHash,
-      p_created_by: createdBy,
-    },
-  );
+  let user = null;
+  let tenant = null;
+  try {
+    const { data: createdUser, error: userError } = await supabase.from("users").insert({
+      name: fullName, email, username, password_hash: passwordHash,
+      role: "tenant", status: "Active",
+    }).select("id, name, email, username").single();
+    throwDatabaseError(userError, "Failed to create tenant user");
+    user = createdUser;
 
-  throwDatabaseError(error, "Failed to create tenant account");
+    const { data: createdTenant, error: tenantError } = await supabase.from("tenants").insert({
+      inquiry_id: inquiryId, user_id: user.id, room_id: roomId,
+      full_name: fullName, email, contact, status: "Active",
+      move_in_date: moveInDate || new Date().toISOString().slice(0, 10),
+    }).select("*").single();
+    throwDatabaseError(tenantError, "Failed to create tenant profile");
+    tenant = createdTenant;
 
-  return data;
+    const { error: roomError } = await supabase.from("rooms").update({ status: "Occupied" }).eq("id", roomId);
+    throwDatabaseError(roomError, "Failed to assign tenant room");
+
+    const { error: notificationError } = await supabase.from("notifications").insert({
+      user_id: user.id, tenant_id: tenant.id, inquiry_id: inquiryId,
+      title: "Tenant account created",
+      message: "Your tenant account has been created successfully.",
+      type: "Account", is_read: false,
+    });
+    throwDatabaseError(notificationError, "Failed to create tenant notification");
+
+    return {
+      tenant_id: tenant.id, user_id: user.id, inquiry_id: inquiryId,
+      room_id: roomId, room_status: "Occupied", created_by: createdBy,
+      username,
+    };
+  } catch (error) {
+    if (tenant?.id) await supabase.from("tenants").delete().eq("id", tenant.id);
+    if (user?.id) await supabase.from("users").delete().eq("id", user.id);
+    if (tenant?.id) await supabase.from("rooms").update({ status: "Available" }).eq("id", roomId);
+    throw error;
+  }
 }
 
 export async function getTenants() {

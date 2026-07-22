@@ -266,7 +266,7 @@ begin
     v_user_id,
     'Tenant account created',
     'Your tenant account has been created successfully.',
-    'tenant_account',
+    'Account',
     false,
     now()
   );

@@ -1,198 +1,43 @@
-import { useState } from "react";
-
-import useCustomerRequests from "../hooks/useCustomerRequests";
-import useTenantCreation from "../hooks/useTenantCreation";
-import useRooms from "../hooks/useRooms";
-
-import CustomerRequestTable from "../components/CustomerRequestTable";
+import { useEffect, useMemo, useState } from "react";
+import { approveRequest, getCustomerRequests, rejectRequest } from "../api/customerRequestApi";
+import { getRooms } from "../api/roomApi";
+import { getTenants } from "../api/tenantApi";
+import { createTenant } from "../api/tenantCreationApi";
+import { getNotifications, updateNotification } from "../api/notificationApi";
 import AddTenantModal from "../components/AddTenantModal";
-import CredentialDisplay from "../components/CredentialDisplay";
-import Loading from "../components/Loading";
-import ErrorMessage from "../components/ErrorMessage";
+
+const nav = [["Dashboard","/admin","▦"],["Rooms","/admin/rooms","♙"],["Tenants","/admin/tenants","♧"],["Billing","/billing","▣"],["Customer Requests","/customer-requests","□"],["Analytics & Reports","/analytics","⌑"]];
+const rows = (result) => Array.isArray(result) ? result : result?.data || [];
+const typeOf = (item) => String(item.type || "Inquiry");
+const statusOf = (item) => {
+  const status = String(item.status || "Pending").trim();
+  return status.toLowerCase() === "open" ? "Pending" : status;
+};
+const roomOf = (item) => item.room?.room_number || item.room?.roomNumber || item.room_number || "Not specified";
+const dateOf = (item) => new Date(item.created_at || Date.now()).toLocaleDateString("en-US", { month:"short", day:"2-digit", year:"numeric" });
+const contactOf = (item) => item.contact || item.phone || item.contact_number || "Not provided";
 
 export default function CustomerRequests() {
-  const {
-    requests,
-    loading: requestsLoading,
-    processingId,
-    error: requestsError,
-    approve,
-    reject,
-    refetch: refetchRequests,
-  } = useCustomerRequests();
-
-  const {
-    rooms,
-    loading: roomsLoading,
-    error: roomsError,
-    refetch: refetchRooms,
-  } = useRooms();
-
-  const {
-    registerTenant,
-    credentials,
-    billing,
-    loading: tenantLoading,
-    error: tenantError,
-    clear: clearTenantCreation,
-  } = useTenantCreation();
-
-  const [selectedInquiry, setSelectedInquiry] =
-    useState(null);
-
-  const [actionError, setActionError] =
-    useState("");
-
-  const handleApprove = async (inquiryId) => {
-    try {
-      setActionError("");
-
-      await approve(inquiryId);
-    } catch (error) {
-      setActionError(error.message);
-    }
-  };
-
-  const handleReject = async (inquiryId) => {
-    try {
-      setActionError("");
-
-      await reject(inquiryId);
-    } catch (error) {
-      setActionError(error.message);
-    }
-  };
-
-  const handleOpenTenantModal = (inquiry) => {
-    setActionError("");
-
-    clearTenantCreation();
-
-    setSelectedInquiry(inquiry);
-  };
-
-  const handleCloseTenantModal = () => {
-    if (tenantLoading) {
-      return;
-    }
-
-    setSelectedInquiry(null);
-  };
-
-  const handleCreateTenant = async (
-    tenantData,
-  ) => {
-    try {
-      setActionError("");
-
-      await registerTenant(tenantData);
-
-      setSelectedInquiry(null);
-
-      await Promise.all([
-        refetchRequests(),
-        refetchRooms(),
-      ]);
-    } catch (error) {
-      setActionError(error.message);
-    }
-  };
-
-  if (requestsLoading) {
-    return <Loading />;
-  }
-
-  const pageError =
-    actionError ||
-    requestsError ||
-    roomsError;
-
-  return (
-    <main className="mx-auto max-w-7xl p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">
-          Customer Requests
-        </h1>
-
-        <p className="mt-1 text-gray-500">
-          Review inquiries, approve or reject
-          requests, and create tenant accounts from
-          approved inquiries.
-        </p>
-      </div>
-
-      {pageError ? (
-        <div className="mb-5">
-          <ErrorMessage message={pageError} />
-        </div>
-      ) : null}
-
-      <CustomerRequestTable
-        requests={requests}
-        processingId={processingId}
-        onApprove={handleApprove}
-        onReject={handleReject}
-        onAddTenant={handleOpenTenantModal}
-      />
-
-      <AddTenantModal
-        open={Boolean(selectedInquiry)}
-        inquiry={selectedInquiry}
-        rooms={rooms}
-        loading={
-          tenantLoading || roomsLoading
-        }
-        error={tenantError}
-        onClose={handleCloseTenantModal}
-        onSubmit={handleCreateTenant}
-      />
-
-      {credentials ? (
-        <div className="mt-6">
-          <CredentialDisplay
-            credentials={credentials}
-          />
-        </div>
-      ) : null}
-
-      {billing ? (
-        <section className="mt-6 rounded-xl border border-blue-200 bg-blue-50 p-5">
-          <h2 className="text-xl font-bold text-blue-900">
-            Initial Billing Created
-          </h2>
-
-          <div className="mt-3 space-y-1 text-blue-800">
-            <p>
-              <span className="font-semibold">
-                Total:
-              </span>{" "}
-              ₱
-              {Number(
-                billing.totalAmount ??
-                  billing.total_amount ??
-                  billing.amount ??
-                  0,
-              ).toLocaleString()}
-            </p>
-
-            <p>
-              <span className="font-semibold">
-                Status:
-              </span>{" "}
-              {billing.status || "Pending"}
-            </p>
-
-            <p>
-              <span className="font-semibold">
-                Due Date:
-              </span>{" "}
-              {billing.dueDate ||
-                billing.due_date ||
-                "Not available"}
-            </p>
-          </div>
-        </section>
-      ) : null}
-    </main>
-  );
+  const [requests,setRequests]=useState([]), [rooms,setRooms]=useState([]), [tenants,setTenants]=useState([]), [notifications,setNotifications]=useState([]);
+  const [filter,setFilter]=useState("All"), [loading,setLoading]=useState(true), [processing,setProcessing]=useState(""), [error,setError]=useState(""), [selected,setSelected]=useState(null), [noticeOpen,setNoticeOpen]=useState(false), [accountOpen,setAccountOpen]=useState(false);
+  const [expanded,setExpanded]=useState(null);
+  const [creationResult,setCreationResult]=useState(null);
+  const [user]=useState(()=>{try{return JSON.parse(localStorage.getItem("user")||"null")||{};}catch{return {};}});
+  const load=async()=>{setLoading(true);setError("");try{const [requestResult,roomResult,tenantResult,noticeResult]=await Promise.allSettled([getCustomerRequests(),getRooms(),getTenants(),getNotifications()]);if(requestResult.status==="rejected")throw requestResult.reason;setRequests(rows(requestResult.value));if(roomResult.status==="fulfilled")setRooms(rows(roomResult.value));if(tenantResult.status==="fulfilled")setTenants(rows(tenantResult.value));if(noticeResult.status==="fulfilled")setNotifications(rows(noticeResult.value));}catch(reason){setError(reason.message);}finally{setLoading(false);}};
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(()=>{load();},[]);
+  const filtered=useMemo(()=>requests.filter((item)=>filter==="All"||(filter==="Open"&&statusOf(item).toLowerCase()==="pending")||typeOf(item).toLowerCase()===filter.toLowerCase()),[requests,filter]);
+  const hasTenant=(request)=>Boolean(request.tenantId||request.tenant_id||request.tenant?.id)||tenants.some((tenant)=>String(tenant.inquiry_id||tenant.inquiryId||tenant.inquiry?.id||"")===String(request.id));
+  const act=async(id,action)=>{setProcessing(id);setError("");try{await action(id);await load();}catch(reason){setError(reason.message);}finally{setProcessing("");}};
+  const addTenant=async(data)=>{setProcessing(selected.id);setError("");try{const result=await createTenant(data);setCreationResult(result?.data||result);setSelected(null);await load();}catch(reason){setError(reason.message);}finally{setProcessing("");}};
+  const unread=(item)=>item.is_read===false||item.status==="Unread";
+  const markRead=async(id)=>{await updateNotification(id);setNotifications((items)=>items.map((item)=>item.id===id?{...item,is_read:true,status:"Read"}:item));};
+  const logout=()=>{localStorage.removeItem("token");localStorage.removeItem("user");localStorage.removeItem("tenantId");window.location.assign("/");};
+  return <div className="admin-shell"><aside className="admin-side"><a href="/admin" className="admin-brand"><b>▥</b><span><strong>Spartment</strong><small>Apartment OS</small></span></a><p>Manage</p><nav>{nav.map(([label,href,icon])=><a className={label==="Customer Requests"?"active":""} href={href} key={label}><i>{icon}</i>{label}</a>)}</nav></aside><div className="admin-work">
+    <header className="admin-top"><div className="admin-top-menu"><button className="admin-notice-button" aria-label="Admin notifications" onClick={()=>{setNoticeOpen(!noticeOpen);setAccountOpen(false);}}>♧{notifications.some(unread)&&<i/>}</button>{noticeOpen&&<section className="admin-notification-dropdown"><header><h3>Notifications</h3><a href="/admin/notifications">View all</a></header>{notifications.length?<ul>{notifications.slice(0,5).map((item)=><li className={unread(item)?"unread":""} key={item.id}><div><strong>{item.title||item.type}</strong><p>{item.message}</p></div>{unread(item)&&<button onClick={()=>markRead(item.id)}>Mark read</button>}</li>)}</ul>:<p className="admin-empty">No notifications yet.</p>}</section>}</div><span className="admin-avatar">{(user.name||"Admin")[0]}</span><div className="admin-top-menu"><button className="admin-user" onClick={()=>{setAccountOpen(!accountOpen);setNoticeOpen(false);}}><strong>{user.name||"Admin"}</strong><small>Admin</small></button>{accountOpen&&<div className="admin-account-dropdown"><strong>{user.email}</strong><button onClick={logout}>↪ <span>Log out</span></button></div>}</div></header>
+    <main className="admin-main requests-admin"><div className="admin-title"><div><h1>Customer Requests</h1><p>Inquiries and support requests submitted through Spartment Assistant.</p></div></div><div className="request-filters">{["All","Open","Inquiry","Maintenance","Other"].map((name)=><button className={filter===name?"active":""} onClick={()=>setFilter(name)} key={name}>{name}</button>)}</div>{error&&<p className="rooms-error" role="alert">{error}<button onClick={load}>Try again</button></p>}{loading?<p>Loading customer requests…</p>:<div className="request-list">{filtered.map((item)=>{const type=typeOf(item),status=statusOf(item),pending=status.toLowerCase()==="pending",resolved=status.toLowerCase()==="approved",inquiry=type.toLowerCase().includes("inquiry"),isExpanded=expanded===item.id,contact=contactOf(item);return <article className={`request-card${isExpanded?" request-card--expanded":""}`} key={item.id}><div className="request-card-meta"><span>{type}</span><em className={`request-status ${status.toLowerCase()}`}>● {resolved&&!inquiry?"Resolved":status}</em><small>{dateOf(item)}</small></div><h2>{inquiry?`Room ${roomOf(item)} inquiry`:String(item.message||type).split(":")[0]}</h2><p className="request-from">From: {item.name||item.full_name||item.email}{roomOf(item)!=="Not specified"&&` · Room ${roomOf(item)}`}</p><p>{item.message||"No message provided."}</p>{isExpanded&&<section className="request-info" aria-label="Requester information"><div><small>Full name</small><strong>{item.name||item.full_name||"Not provided"}</strong></div><div><small>Email</small><strong>{item.email||"Not provided"}</strong></div><div><small>Contact</small><strong>{contact}</strong></div><div><small>Preferred room</small><strong>{roomOf(item)}</strong></div>{item.move_in_date||item.moveInDate?<div><small>Move-in date</small><strong>{item.move_in_date||item.moveInDate}</strong></div>:null}<div><small>Submitted</small><strong>{dateOf(item)}</strong></div></section>}<div className="request-actions"><button className="secondary" type="button" aria-expanded={isExpanded} onClick={()=>setExpanded(isExpanded?null:item.id)}>{isExpanded?"Hide Info":"View Info"}</button>{pending&&<><button disabled={processing===item.id} onClick={()=>act(item.id,approveRequest)}>{processing===item.id?"Processing…":"Approve"}</button><button className="danger" disabled={processing===item.id} onClick={()=>act(item.id,rejectRequest)}>Reject</button></>}{resolved&&inquiry&&!hasTenant(item)&&<button disabled={processing===item.id} onClick={()=>setSelected(item)}>Add Tenant</button>}{hasTenant(item)&&<span>Tenant added</span>}</div></article>;})}{!filtered.length&&<p className="admin-empty">No requests match this filter.</p>}</div>}</main></div>
+    {filtered.map((item)=><span className="support-visually-hidden" key={`requester-${item.id}`}><span>{item.name||item.full_name||item.email}</span><span>{statusOf(item)}</span></span>)}
+    {creationResult&&<div className="tenant-creation-result"><section><h2>Tenant account created</h2><p>Username: <strong>{creationResult.credentials?.username}</strong></p><p>Email: <strong>{creationResult.credentials?.email}</strong></p><p>Password: <strong>{creationResult.credentials?.password}</strong></p></section><section><h2>Initial billing created</h2><p>Amount: <strong>{Number(creationResult.billing?.totalAmount??creationResult.billing?.total_amount??0).toLocaleString()}</strong></p><p>Due date: <strong>{creationResult.billing?.dueDate||creationResult.billing?.due_date}</strong></p></section></div>}
+    <AddTenantModal open={Boolean(selected)} inquiry={selected} rooms={rooms} loading={Boolean(processing)} error={error} onClose={()=>setSelected(null)} onSubmit={addTenant}/>
+  </div>;
 }

@@ -1,3 +1,3 @@
-export default function Loading() {
-  return <div role="status">Loading...</div>;
+export default function Loading({ message = "Loading..." }) {
+  return <div role="status">{message}</div>;
 }

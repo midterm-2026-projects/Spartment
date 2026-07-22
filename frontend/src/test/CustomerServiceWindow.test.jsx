@@ -24,7 +24,7 @@ describe("CustomerServiceWindow", () => {
 
     // Act
     const closeButton = screen.getByRole("button", {
-      name: /x/i,
+      name: /close customer service/i,
     });
 
     // Assert
@@ -41,7 +41,7 @@ describe("CustomerServiceWindow", () => {
     );
 
     const closeButton = screen.getByRole("button", {
-      name: /x/i,
+      name: /close customer service/i,
     });
 
     // Act
@@ -49,5 +49,20 @@ describe("CustomerServiceWindow", () => {
 
     // Assert
     expect(handleClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("prefills the clicked room in the inquiry form", () => {
+    const room = { id: "room-101", roomNumber: "101", status: "Available" };
+
+    render(
+      <CustomerServiceWindow
+        view="inquiry"
+        rooms={[room]}
+        selectedRoom={room}
+      />,
+    );
+
+    expect(screen.getByLabelText(/preferred room/i)).toHaveValue("room-101");
+    expect(screen.getByLabelText(/message/i)).toHaveValue("Room 101: ");
   });
 });

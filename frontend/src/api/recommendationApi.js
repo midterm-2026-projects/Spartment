@@ -1,29 +1,65 @@
 import axios from "axios";
 
+const recommendationAPI = axios.create({
+  baseURL: `${import.meta.env.VITE_API_BASE_URL || "/api"}/recommendation`,
+});
+recommendationAPI.interceptors.request.use((config) => { const token = localStorage.getItem("token"); if (token) config.headers.Authorization = `Bearer ${token}`; return config; });
 
-const API_URL =
-  "http://localhost:5000/api/recommendations";
+/*
+==========================================
+GET ACTIVE RECOMMENDATIONS
+==========================================
+GET
+/api/recommendation
+==========================================
+*/
 
-
-export async function getRecommendations() {
-
+export async function fetchRecommendations() {
   try {
+    const response = await recommendationAPI.get("/");
 
-    const response =
-      await axios.get(
-        API_URL
-      );
-
-
-    return response.data.data;
-
-
-  } catch(error) {
-
-    throw new Error(
-      "Failed to retrieve recommendations."
-    );
-
+    return response.data?.data ?? response.data;
+  } catch (error) {
+    throw new Error("Failed to retrieve recommendations.");
   }
-
 }
+
+/*
+==========================================
+GENERATE NEW RECOMMENDATIONS
+==========================================
+POST
+/api/recommendation/generate
+==========================================
+*/
+
+export async function generateRecommendations() {
+  try {
+    const response = await recommendationAPI.post("/generate");
+
+    return response.data?.data ?? response.data;
+  } catch (error) {
+    throw new Error("Failed to generate recommendations.");
+  }
+}
+
+/*
+==========================================
+REFRESH RECOMMENDATIONS
+==========================================
+POST
+/api/recommendation/refresh
+==========================================
+*/
+
+export async function refreshRecommendations() {
+  try {
+    const response = await recommendationAPI.post("/refresh");
+
+    return response.data?.data ?? response.data;
+  } catch (error) {
+    throw new Error("Failed to refresh recommendations.");
+  }
+}
+
+export default recommendationAPI;

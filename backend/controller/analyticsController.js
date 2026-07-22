@@ -1,31 +1,19 @@
-import {
-  fetchAnalyticsData,
-} from "../service/analyticsService.js";
+import { fetchAnalyticsData } from "../service/analyticsService.js";
 
-
-export async function getAnalytics(
-  req,
-  res
-) {
-
+export async function getAnalytics(req, res) {
   try {
+    const analytics = await fetchAnalyticsData();
 
-    const analytics =
-      await fetchAnalyticsData();
+    return res.status(200).json({
+      success: true,
 
-
-    res.status(200).json(
-      analytics
-    );
-
-
-  } catch (error) {
-
-    res.status(500).json({
-      message:
-        error.message,
+      data: analytics,
     });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
 
+      message: error.message,
+    });
   }
-
 }

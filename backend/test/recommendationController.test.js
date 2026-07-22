@@ -2,206 +2,80 @@ import express from "express";
 
 import request from "supertest";
 
-import {
-  describe,
-  it,
-  expect,
-  vi,
-} from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
+vi.mock("../service/recommendationService.js", () => ({
+  getAllRecommendations: vi.fn(),
 
-import recommendationRoutes
-from "../routes/recommendationRoutes.js";
+  saveRecommendations: vi.fn(),
+}));
 
+import { getAllRecommendations } from "../service/recommendationService.js";
 
-import * as recommendationService
-from "../service/recommendationService.js";
+import recommendationRoutes from "../routes/recommendationRoutes.js";
 
+const app = express();
 
-vi.mock(
-  "../service/recommendationService.js"
-);
+app.use(express.json());
 
+app.use("/api/recommendation", recommendationRoutes);
 
+describe("Recommendation Controller and Routes", () => {
+  it("should retrieve recommendations successfully", async () => {
+    const mockRecommendations = [
+      {
+        id: 1,
 
-const app =
-  express();
+        title: "Overdue Payments Detected",
 
+        message: "5 tenants have overdue balances.",
 
-app.use(
-  express.json()
-);
+        priority: "High",
 
+        category: "Payment",
+      },
+    ];
 
-app.use(
-  "/api",
-  recommendationRoutes
-);
+    getAllRecommendations.mockResolvedValue(mockRecommendations);
 
+    const response = await request(app).get("/api/recommendation");
 
+    expect(response.status).toBe(200);
 
-describe(
-  "Recommendation Controller and Routes",
-  ()=>{
+    expect(response.body.success).toBe(true);
 
+    expect(response.body.data).toEqual(mockRecommendations);
 
-    it(
-      "should retrieve recommendations successfully",
-      async()=>{
+    expect(response.body.data[0].priority).toBe("High");
+  });
 
+  it("should return empty recommendation list successfully", async () => {
+    getAllRecommendations.mockResolvedValue([]);
 
-        const mockRecommendations = [
+    const response = await request(app).get("/api/recommendation");
 
-          {
-            id:1,
+    expect(response.status).toBe(200);
 
-            title:
-              "Overdue Payments Detected",
+    expect(response.body).toEqual({
+      success: true,
 
-            message:
-              "5 tenants have overdue balances.",
+      data: [],
+    });
+  });
 
-            priority:
-              "High",
-
-            category:
-              "Payment",
-
-          },
-
-        ];
-
-
-
-        recommendationService
-        .generateRecommendations
-        .mockResolvedValue(
-          mockRecommendations
-        );
-
-
-
-        const response =
-          await request(app)
-          .get(
-            "/api/recommendations"
-          );
-
-
-
-        expect(
-          response.status
-        )
-        .toBe(200);
-
-
-
-        expect(
-          response.body.success
-        )
-        .toBe(true);
-
-
-
-        expect(
-          response.body.data[0].priority
-        )
-        .toBe(
-          "High"
-        );
-
-
-        expect(
-          response.body.data[0].category
-        )
-        .toBe(
-          "Payment"
-        );
-
-
-      }
+  it("should return server error when service fails", async () => {
+    getAllRecommendations.mockRejectedValue(
+      new Error("Failed to retrieve recommendations."),
     );
 
+    const response = await request(app).get("/api/recommendation");
 
+    expect(response.status).toBe(500);
 
-    it(
-      "should return unavailable message when no recommendations exist",
-      async()=>{
+    expect(response.body).toEqual({
+      success: false,
 
-
-        recommendationService
-        .generateRecommendations
-        .mockResolvedValue([]);
-
-
-
-        const response =
-          await request(app)
-          .get(
-            "/api/recommendations"
-          );
-
-
-
-        expect(
-          response.status
-        )
-        .toBe(404);
-
-
-
-        expect(
-          response.body.message
-        )
-        .toBe(
-          "No recommendation information available."
-        );
-
-
-      }
-    );
-
-
-
-    it(
-      "should return server error when service fails",
-      async()=>{
-
-
-        recommendationService
-        .generateRecommendations
-        .mockRejectedValue(
-          new Error()
-        );
-
-
-
-        const response =
-          await request(app)
-          .get(
-            "/api/recommendations"
-          );
-
-
-
-        expect(
-          response.status
-        )
-        .toBe(500);
-
-
-
-        expect(
-          response.body.message
-        )
-        .toBe(
-          "Failed to retrieve recommendations."
-        );
-
-
-      }
-    );
-
-
-  }
-);
+      message: "Failed to retrieve recommendations.",
+    });
+  });
+});

@@ -5,7 +5,10 @@ import {
   getTenantBilling,
   getBillingRecords,
   updateBillingStatus,
+  updateUtilityBilling,
 } from "../controller/billingController.js";
+import authenticateUser from "../middleware/authMiddleware.js";
+import { requireAdmin, requireAdminOrTenant } from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 
@@ -22,7 +25,7 @@ const router = express.Router();
 |--------------------------------------------------------------------------
 */
 
-router.post("/", createBilling);
+router.post("/", authenticateUser, requireAdmin, createBilling);
 
 /*
 |--------------------------------------------------------------------------
@@ -39,7 +42,7 @@ router.post("/", createBilling);
 |--------------------------------------------------------------------------
 */
 
-router.get("/", getBillingRecords);
+router.get("/", authenticateUser, requireAdmin, getBillingRecords);
 
 /*
 |--------------------------------------------------------------------------
@@ -56,7 +59,7 @@ router.get("/", getBillingRecords);
 |--------------------------------------------------------------------------
 */
 
-router.get("/tenant/:tenantId", getTenantBilling);
+router.get("/tenant/:tenantId", authenticateUser, requireAdminOrTenant, getTenantBilling);
 
 /*
 |--------------------------------------------------------------------------
@@ -76,6 +79,7 @@ router.get("/tenant/:tenantId", getTenantBilling);
 |--------------------------------------------------------------------------
 */
 
-router.patch("/:id/status", updateBillingStatus);
+router.patch("/:id/status", authenticateUser, requireAdmin, updateBillingStatus);
+router.patch("/:id/utility", authenticateUser, requireAdmin, updateUtilityBilling);
 
 export default router;

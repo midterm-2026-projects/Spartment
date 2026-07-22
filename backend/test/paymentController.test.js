@@ -1,5 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
 
+/*
+|--------------------------------------------------------------------------
+| Mock Payment Service
+|--------------------------------------------------------------------------
+*/
+
 vi.mock("../service/paymentService.js", () => ({
   submitPayment: vi.fn(),
 
@@ -12,12 +18,24 @@ vi.mock("../service/paymentService.js", () => ({
   getPaymentMetrics: vi.fn(),
 }));
 
+/*
+|--------------------------------------------------------------------------
+| Mock DSS Refresh Service
+|--------------------------------------------------------------------------
+*/
+
+vi.mock("../service/dssRefreshService.js", () => ({
+  refreshRiskAfterPaymentChange: vi.fn(),
+}));
+
 import {
   verifyPayment,
   rejectPayment,
   getPaymentHistory,
   getPaymentMetrics,
 } from "../service/paymentService.js";
+
+import { refreshRiskAfterPaymentChange } from "../service/dssRefreshService.js";
 
 import {
   verifyPaymentStatus,
@@ -39,7 +57,13 @@ describe("Payment Controller", () => {
     verifyPayment.mockResolvedValue({
       payment_id: "payment-001",
 
+      tenant_id: "tenant-001",
+
       status: "Verified",
+    });
+
+    refreshRiskAfterPaymentChange.mockResolvedValue({
+      success: true,
     });
 
     const req = {
@@ -58,12 +82,22 @@ describe("Payment Controller", () => {
 
     expect(verifyPayment).toHaveBeenCalledWith("payment-001", "admin-001");
 
+    expect(refreshRiskAfterPaymentChange).toHaveBeenCalledWith("tenant-001");
+
     expect(res.status).toHaveBeenCalledWith(200);
   });
 
   it("should reject payment successfully", async () => {
     rejectPayment.mockResolvedValue({
+      payment_id: "payment-001",
+
+      tenant_id: "tenant-001",
+
       status: "Rejected",
+    });
+
+    refreshRiskAfterPaymentChange.mockResolvedValue({
+      success: true,
     });
 
     const req = {
@@ -81,6 +115,8 @@ describe("Payment Controller", () => {
     await rejectPaymentStatus(req, res);
 
     expect(rejectPayment).toHaveBeenCalledWith("payment-001", "admin-001");
+
+    expect(refreshRiskAfterPaymentChange).toHaveBeenCalledWith("tenant-001");
 
     expect(res.status).toHaveBeenCalledWith(200);
   });
@@ -111,6 +147,8 @@ describe("Payment Controller", () => {
     const res = responseMock();
 
     await getRevenueMetrics({}, res);
+
+    expect(getPaymentMetrics).toHaveBeenCalled();
 
     expect(res.status).toHaveBeenCalledWith(200);
   });

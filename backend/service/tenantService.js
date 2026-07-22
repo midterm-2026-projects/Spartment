@@ -92,6 +92,7 @@ export async function createTenantAccount(data) {
     username: normalizedData.username,
     passwordHash,
     createdBy: normalizedData.createdBy,
+    moveInDate: inquiry.move_in_date,
   });
 
   let billing = null;
@@ -99,12 +100,16 @@ export async function createTenantAccount(data) {
   try {
     billing = await generateBilling({
       tenantId: createdRecord.tenant_id,
-      billingType: "initial",
+      roomId: createdRecord.room_id,
+      totalAmount: Number(room.monthly_rent || 0),
+      billingPeriod: new Date().toISOString().slice(0, 10),
+      dueDate: new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10),
     });
   } catch (error) {
-    throw new Error(
-      `Tenant account was created, but initial billing failed: ${error.message}`,
-    );
+    billing = {
+      status: "Not created",
+      warning: `Tenant account was created, but initial billing failed: ${error.message}`,
+    };
   }
 
   return {

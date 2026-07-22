@@ -1,252 +1,44 @@
-import {
-  fetchBillingRecords,
-} from "../model/billingModel.js";
+import { getBillingInformation } from "../model/billingModel.js";
+import { getRooms } from "../model/roomModel.js";
+import { getTenants } from "../model/tenantModel.js";
+import { getRecommendations } from "../model/recommendationModel.js";
 
-import {
-  fetchRooms,
-} from "../model/roomModel.js";
-
-import {
-  fetchTenants,
-} from "../model/tenantModel.js";
-
+const monthKey = (value) => String(value || "").slice(0, 7);
 
 export async function fetchAnalyticsData() {
-
+  let billing, rooms, tenants, recommendations;
   try {
-
-
-    const billing =
-      await fetchBillingRecords();
-
-
-    const rooms =
-      await fetchRooms();
-
-
-    const tenants =
-      await fetchTenants();
-
-
-
-    return {
-
-      totalRevenue:
-        calculateRevenue(
-          billing
-        ),
-
-
-      occupancyRate:
-        calculateOccupancy(
-          rooms
-        ),
-
-
-      totalTenants:
-        tenants.length,
-
-
-      paymentStatus:
-        calculatePaymentStatus(
-          billing
-        ),
-
-
-      tenantGrowth:
-        calculateTenantGrowth(
-          tenants
-        ),
-
-
-      revenueTrend:
-        generateRevenueTrend(
-          billing
-        ),
-
-
-      recommendations:
-        generateRecommendations(
-          billing,
-          rooms
-        ),
-
-    };
-
-
-  } catch(error){
-
-    throw new Error(
-      "Failed to retrieve analytics information."
-    );
-
+    [billing, rooms, tenants, recommendations] = await Promise.all([
+      getBillingInformation(), getRooms(), getTenants(), getRecommendations(),
+    ]);
+  } catch {
+    throw new Error("Failed to retrieve analytics information.");
   }
 
-}
-
-
-
-function calculateRevenue(
-  billing
-){
-
-  return billing.reduce(
-    (total,item)=>
-      total + item.amount,
-    0
-  );
-
-}
-
-
-
-
-function calculateOccupancy(
-  rooms
-){
-
-  if(
-    rooms.length === 0
-  ){
-    return 0;
+  const monthly = new Map();
+  for (const bill of billing) {
+    const key = monthKey(bill.billing_period);
+    if (!key) continue;
+    const point = monthly.get(key) || { month:key, forecast:0, actual:0 };
+    point.forecast += Number(bill.total_amount || 0);
+    point.actual += Number(bill.paid_amount || 0);
+    monthly.set(key, point);
   }
-
-
-  const occupied =
-    rooms.filter(
-      room =>
-        room.status === "Occupied"
-    ).length;
-
-
-
-  return Number(
-    (
-      occupied /
-      rooms.length *
-      100
-    ).toFixed(2)
-  );
-
-}
-
-
-
-
-function calculatePaymentStatus(
-  billing
-){
+  const revenueTrend = [...monthly.values()].sort((a,b)=>a.month.localeCompare(b.month)).slice(-8);
+  const occupancy = rooms.reduce((all,room)=>{const key=String(room.status||"Unknown");all[key]=(all[key]||0)+1;return all;},{});
+  const paymentStatus = billing.reduce((all,bill)=>{const status=String(bill.status||"Unpaid");all[status]=(all[status]||0)+1;return all;},{});
+  const tenantGrowth = tenants.reduce((all,tenant)=>{const key=monthKey(tenant.created_at);if(key)all[key]=(all[key]||0)+1;return all;},{});
+  let cumulative=0;
+  const growth=Object.entries(tenantGrowth).sort(([a],[b])=>a.localeCompare(b)).map(([month,count])=>({month,count:(cumulative+=count)}));
+  const totalForecast=revenueTrend.reduce((sum,item)=>sum+item.forecast,0), totalActual=revenueTrend.reduce((sum,item)=>sum+item.actual,0);
 
   return {
-
-    paid:
-      billing.filter(
-        item =>
-          item.status === "Paid"
-      ).length,
-
-
-    pending:
-      billing.filter(
-        item =>
-          item.status === "Pending"
-      ).length,
-
-
-    overdue:
-      billing.filter(
-        item =>
-          item.status === "Overdue"
-      ).length,
-
+    totalRevenue: totalActual,
+    forecastRevenue: totalForecast,
+    variance: totalForecast ? Number((((totalActual-totalForecast)/totalForecast)*100).toFixed(1)) : 0,
+    occupancyRate: rooms.length ? Number((((occupancy.Occupied||0)/rooms.length)*100).toFixed(1)) : 0,
+    totalTenants: tenants.filter((tenant)=>String(tenant.status).toLowerCase()==="active").length,
+    revenueTrend, occupancy, paymentStatus, tenantGrowth:growth,
+    recommendations: recommendations.filter((item)=>String(item.status).toLowerCase()==="active").slice(0,6),
   };
-
-}
-
-
-
-
-function calculateTenantGrowth(
- tenants
-){
-
- return tenants.length;
-
-}
-
-
-
-function generateRevenueTrend(
- billing
-){
-
- return billing.map(
-  item=>({
-
-    month:item.month,
-
-    amount:item.amount
-
-  })
- );
-
-}
-
-
-
-function generateRecommendations(
- billing,
- rooms
-){
-
- const recommendations=[];
-
-
- const overdue =
- billing.filter(
-  item =>
-   item.status==="Overdue"
- );
-
-
- if(overdue.length>0){
-
-  recommendations.push({
-
-   title:
-   "Follow up on late payments",
-
-   message:
-   `${overdue.length} overdue payments detected.`
-
-  });
-
- }
-
-
-
- const vacant =
- rooms.filter(
-  room =>
-   room.status==="Vacant"
- );
-
-
- if(vacant.length>0){
-
- recommendations.push({
-
-  title:
-  "Vacant rooms detected",
-
-  message:
-  `${vacant.length} vacant rooms available.`
-
- });
-
- }
-
-
- return recommendations;
-
 }

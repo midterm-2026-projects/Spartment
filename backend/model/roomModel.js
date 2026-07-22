@@ -59,13 +59,12 @@ export async function getAvailableRooms() {
       updated_at
     `,
     )
-    .eq("status", "Available")
     .order("room_number", {
       ascending: true,
     });
 
   if (error) {
-    throw new Error(`Failed to retrieve available rooms: ${error.message}`);
+    throw new Error(`Failed to retrieve public room catalogue: ${error.message}`);
   }
 
   return data ?? [];
@@ -134,4 +133,26 @@ export async function updateRoomStatus(roomId, status) {
   }
 
   return data;
+}
+
+export async function updateRoomRecord(roomId, updates) {
+  const payload = {};
+  if (updates.status !== undefined) payload.status = updates.status;
+  if (updates.monthlyRent !== undefined) payload.monthly_rent = Number(updates.monthlyRent);
+  const { data, error } = await supabase.from("rooms").update(payload).eq("id", roomId).select("*").maybeSingle();
+  if (error) throw new Error(`Failed to update room: ${error.message}`);
+  if (!data) throw new Error("Room not found");
+  return data;
+}
+
+export async function createRoomRecord(data) {
+  const { data: room, error } = await supabase.from("rooms").insert({
+    room_number: String(data.roomNumber).trim(),
+    room_type: String(data.roomType || "Standard").trim(),
+    description: String(data.description || "Apartment room").trim(),
+    monthly_rent: Number(data.monthlyRent),
+    status: data.status || "Available",
+  }).select("*").single();
+  if (error) throw new Error(error.code === "23505" ? "Room number already exists" : `Failed to create room: ${error.message}`);
+  return room;
 }

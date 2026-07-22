@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { getRooms, getAvailableRooms } from "../api/roomApi";
 
-export default function useRooms() {
+export default function useRooms({ publicOnly = false } = {}) {
   const [rooms, setRooms] = useState([]);
 
   const [availableRooms, setAvailableRooms] = useState([]);
@@ -17,7 +17,7 @@ export default function useRooms() {
 
       setError("");
 
-      const response = await getRooms();
+      const response = publicOnly ? await getAvailableRooms() : await getRooms();
 
       const roomList = Array.isArray(response)
         ? response
@@ -25,7 +25,7 @@ export default function useRooms() {
 
       setRooms(roomList);
 
-      const available = await getAvailableRooms();
+      const available = publicOnly ? roomList : await getAvailableRooms();
 
       setAvailableRooms(available);
     } catch (error) {
@@ -33,7 +33,7 @@ export default function useRooms() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [publicOnly]);
 
   useEffect(() => {
     fetchRooms();

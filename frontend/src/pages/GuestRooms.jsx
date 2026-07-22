@@ -7,9 +7,12 @@ import GuestRoomList from "../components/GuestRoomList";
 import InquiryForm from "../components/InquiryForm";
 import Loading from "../components/Loading";
 import ErrorMessage from "../components/ErrorMessage";
+import UiIcon from "../components/UiIcon";
 
 export default function GuestRooms() {
-  const { rooms, loading: roomsLoading, error: roomsError } = useRooms();
+  const { rooms, loading: roomsLoading, error: roomsError, refetch } = useRooms({
+    publicOnly: true,
+  });
 
   const {
     createInquiry,
@@ -23,7 +26,6 @@ export default function GuestRooms() {
 
   const handleInquiry = (room) => {
     reset();
-
     setSelectedRoom(room);
   };
 
@@ -47,50 +49,68 @@ export default function GuestRooms() {
     }
   };
 
-  if (roomsLoading) {
-    return <Loading />;
-  }
-
-  if (roomsError) {
-    return <ErrorMessage message={roomsError} />;
-  }
-
   return (
-    <main className="mx-auto max-w-7xl p-6">
-      <div className="mb-7">
-        <h1 className="text-3xl font-bold text-gray-900">Guest Rooms</h1>
+    <main className="guest-page">
+      <header className="guest-nav">
+        <a className="guest-brand" href="/" aria-label="Spartment home">
+          <span className="guest-brand__mark"><UiIcon name="logo" size={24} /></span>
+          <strong>Spartment</strong>
+        </a>
+        <a className="guest-exit" href="/">
+          <span aria-hidden="true">↪</span> Exit
+        </a>
+      </header>
 
-        <p className="mt-1 text-gray-500">
-          Browse available rooms and submit an inquiry.
-        </p>
-      </div>
+      <section className="guest-hero">
+        <div>
+          <p>Guest view</p>
+          <h1>Find your next room.</h1>
+          <span>
+            Browse live apartment availability and send an inquiry in minutes.
+          </span>
+        </div>
+      </section>
 
       {success ? (
         <div
           role="status"
-          className="mb-6 rounded-lg border border-green-200 bg-green-50 p-4 text-green-700"
+          className="guest-message guest-message--success"
         >
           {success}
         </div>
       ) : null}
 
       {inquiryError && !selectedRoom ? (
-        <div className="mb-6">
+        <div className="guest-message">
           <ErrorMessage message={inquiryError} />
         </div>
       ) : null}
 
-      {selectedRoom ? (
-        <InquiryForm
-          selectedRoom={selectedRoom}
-          rooms={rooms}
-          loading={inquiryLoading}
-          error={inquiryError}
-          onBack={handleBack}
-          onSubmit={handleSubmitInquiry}
-        />
+      {roomsLoading ? (
+        <section className="guest-content guest-state"><Loading /></section>
+      ) : roomsError ? (
+        <section className="guest-content guest-state">
+          <div className="guest-error" role="alert">
+            <strong>We couldn’t load the rooms</strong>
+            <p>{roomsError}</p>
+            <button type="button" onClick={refetch}>Try again</button>
+          </div>
+        </section>
+      ) : selectedRoom ? (
+        <section className="guest-content guest-content--form">
+          <InquiryForm
+            selectedRoom={selectedRoom}
+            rooms={rooms}
+            loading={inquiryLoading}
+            error={inquiryError}
+            onBack={handleBack}
+            onSubmit={handleSubmitInquiry}
+          />
+        </section>
       ) : (
-        <GuestRoomList rooms={rooms} onInquiry={handleInquiry} />
+        <section className="guest-content">
+          <GuestRoomList rooms={rooms} onInquiry={handleInquiry} />
+        </section>
       )}
     </main>
   );

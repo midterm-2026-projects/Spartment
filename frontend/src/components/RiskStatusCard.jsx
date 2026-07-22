@@ -1,28 +1,21 @@
 function normalizeRiskLevel(risk) {
-  const rawRiskLevel =
-    risk?.riskLevel ?? risk?.risk_level ?? risk?.level ?? "Low";
+  const level = risk?.riskLevel ?? risk?.risk_level ?? risk?.level ?? "Low";
 
-  const value = String(rawRiskLevel).trim();
-
-  if (!value) {
-    return "Low Risk";
+  if (String(level).toLowerCase().includes("risk")) {
+    return level;
   }
 
-  if (value.toLowerCase().includes("risk")) {
-    return value;
-  }
-
-  return `${value} Risk`;
+  return `${level} Risk`;
 }
 
-function getRiskClass(riskLevel) {
-  const level = riskLevel.toLowerCase();
+function getRiskClass(level) {
+  const value = level.toLowerCase();
 
-  if (level.includes("high")) {
+  if (value.includes("high")) {
     return "bg-red-100 text-red-700";
   }
 
-  if (level.includes("medium")) {
+  if (value.includes("medium")) {
     return "bg-yellow-100 text-yellow-700";
   }
 
@@ -30,42 +23,48 @@ function getRiskClass(riskLevel) {
 }
 
 export default function RiskStatusCard({ risk }) {
+  if (!risk) {
+    return (
+      <section className="bg-white rounded-xl shadow p-6">
+        <h2 className="text-lg font-bold">Tenant Risk Status</h2>
+
+        <p className="text-gray-500 mt-3">No risk information available.</p>
+      </section>
+    );
+  }
+
   const riskLevel = normalizeRiskLevel(risk);
 
-  const riskClass = getRiskClass(riskLevel);
-
   return (
-    <section className="rounded-xl bg-white p-5 shadow">
+    <section className="bg-white rounded-xl shadow p-6">
       <h2 className="text-lg font-bold">Tenant Risk Status</h2>
 
       <div
         className={`
           mt-4
-          rounded-lg
           px-4
           py-2
+          rounded-lg
           font-bold
-          ${riskClass}
+          ${getRiskClass(riskLevel)}
         `}
       >
         {riskLevel}
       </div>
 
-      {risk?.score !== undefined && (
-        <p className="mt-3 text-sm text-gray-600">Risk score: {risk.score}</p>
-      )}
+      <div className="mt-4 space-y-2 text-sm text-gray-600">
+        {risk.riskScore !== undefined && <p>Risk Score: {risk.riskScore}</p>}
 
-      {risk?.latePayments !== undefined && (
-        <p className="mt-2 text-sm text-gray-600">
-          Late Payments: {risk.latePayments}
-        </p>
-      )}
+        {risk.riskCategory && <p>Category: {risk.riskCategory}</p>}
 
-      {risk?.unpaidBalance !== undefined && (
-        <p className="mt-2 text-sm text-gray-600">
-          Unpaid Balance: ₱{risk.unpaidBalance}
-        </p>
-      )}
+        {risk.latePayments !== undefined && (
+          <p>Late Payments: {risk.latePayments}</p>
+        )}
+
+        {risk.unpaidBalance !== undefined && (
+          <p>Unpaid Balance: ₱{risk.unpaidBalance}</p>
+        )}
+      </div>
     </section>
   );
 }

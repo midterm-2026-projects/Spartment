@@ -1,41 +1,123 @@
-let riskRecords = [];
+import { supabase } from "../config/supabaseClient.js";
 
 /*
 |--------------------------------------------------------------------------
-| Save Tenant Risk Analysis
+| Create Risk Assessment
+|--------------------------------------------------------------------------
+| Saves generated risk analysis result
 |--------------------------------------------------------------------------
 */
 
 export async function createRiskRecord(data) {
-  const riskRecord = {
-    id: riskRecords.length + 1,
+  const {
+    tenantId,
+    roomId,
+    billingId,
+    riskScore,
+    riskLevel,
+    riskCategory,
+    sourceCondition,
+    indicators,
+    assessmentDate,
+  } = data;
 
-    tenantId: data.tenantId,
+  const { data: risk, error } = await supabase
 
-    riskLevel: data.riskLevel,
+    .from("risk_assessments")
 
-    indicators: data.indicators || [],
+    .insert({
+      tenant_id: tenantId,
 
-    latePayments: data.latePayments || 0,
+      room_id: roomId,
 
-    unpaidBalance: data.unpaidBalance || 0,
+      billing_id: billingId,
 
-    createdAt: new Date(),
-  };
+      risk_score: riskScore,
 
-  riskRecords.push(riskRecord);
+      risk_level: riskLevel,
 
-  return riskRecord;
+      risk_category: riskCategory,
+
+      source_condition: sourceCondition,
+
+      assessment_date: assessmentDate || new Date(),
+    })
+
+    .select()
+
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  /*
+  |
+  | Save risk indicators
+  |
+  */
+
+  if (indicators && indicators.length > 0) {
+    const indicatorRecords = indicators.map((indicator) => ({
+      risk_assessment_id: risk.id,
+
+      indicator_name: indicator.name,
+
+      indicator_value: indicator.value,
+
+      description: indicator.description,
+    }));
+
+    const { error: indicatorError } = await supabase
+
+      .from("risk_indicators")
+
+      .insert(indicatorRecords);
+
+    if (indicatorError) {
+      throw new Error(indicatorError.message);
+    }
+  }
+
+  return risk;
 }
 
 /*
 |--------------------------------------------------------------------------
-| Get Risk Record By Tenant
+| Get Risk Assessment By Tenant
 |--------------------------------------------------------------------------
 */
 
 export async function getRiskByTenant(tenantId) {
-  return riskRecords.find((risk) => risk.tenantId == tenantId);
+  const { data, error } = await supabase
+
+    .from("risk_assessments")
+
+    .select(
+      `
+
+      *,
+
+      risk_indicators(*)
+
+    `,
+    )
+
+    .eq("tenant_id", tenantId)
+
+    .order("assessment_date", {
+      ascending: false,
+    })
+
+    .limit(1)
+
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
 }
 
 /*
@@ -45,7 +127,34 @@ export async function getRiskByTenant(tenantId) {
 */
 
 export async function getHighRiskRecords() {
-  return riskRecords.filter((risk) => risk.riskLevel === "High");
+  const { data, error } = await supabase
+
+    .from("risk_assessments")
+
+    .select(
+      `
+
+      *,
+
+      tenants(
+        full_name,
+        email
+      )
+
+    `,
+    )
+
+    .eq("risk_level", "High")
+
+    .order("risk_score", {
+      ascending: false,
+    });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
 }
 
 /*
@@ -55,5 +164,61 @@ export async function getHighRiskRecords() {
 */
 
 export async function getRiskRecords() {
-  return riskRecords;
+  const { data, error } = await supabase
+
+    .from("risk_assessments")
+
+    .select(
+      `
+
+      *,
+
+      tenants(
+        full_name
+      ),
+
+      risk_indicators(*)
+
+    `,
+    )
+
+    .order("created_at", {
+      ascending: false,
+    });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Update Risk Status
+|--------------------------------------------------------------------------
+*/
+
+export async function updateRiskStatus(id, status) {
+  const { data, error } = await supabase
+
+    .from("risk_assessments")
+
+    .update({
+      status,
+
+      updated_at: new Date(),
+    })
+
+    .eq("id", id)
+
+    .select()
+
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
 }

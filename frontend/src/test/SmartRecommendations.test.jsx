@@ -1,340 +1,115 @@
-import {
-  describe,
-  expect,
-  it,
-} from "vitest";
+import { describe, it, expect } from "vitest";
 
+import { render, screen } from "@testing-library/react";
 
-import {
-  render,
-  screen,
-} from "@testing-library/react";
+import SmartRecommendations from "../components/SmartRecommendations";
 
+describe("Smart Recommendations", () => {
+  it("should display recommendation information correctly", () => {
+    const recommendations = [
+      {
+        id: "recommendation-001",
 
-import SmartRecommendations
-from "../components/SmartRecommendations";
+        title: "Overdue Payments Detected",
 
+        description: "Send payment reminders to tenants with overdue balances.",
 
+        priority: "High",
 
-describe(
-  "Smart Recommendations",
-  () => {
+        category: "Payment",
 
+        status: "Active",
 
-    it(
-      "should display recommendations correctly",
-      () => {
+        risk_condition: "Repeated late payments",
 
+        tenant_id: "tenant-001",
 
-        const recommendations = [
+        room_id: "room-101",
+      },
+    ];
 
-          {
+    render(<SmartRecommendations recommendations={recommendations} />);
 
-            id:
-              1,
+    expect(screen.getByText("Smart Recommendations")).toBeInTheDocument();
 
-            title:
-              "Overdue Payments Detected",
+    expect(screen.getByText("Overdue Payments Detected")).toBeInTheDocument();
 
-            message:
-              "5 tenants have overdue balances.",
+    expect(
+      screen.getByText(
+        "Send payment reminders to tenants with overdue balances.",
+      ),
+    ).toBeInTheDocument();
 
-            priority:
-              "High",
+    expect(screen.getByText("Repeated late payments")).toBeInTheDocument();
+  });
 
-            category:
-              "Payment",
+  it("should display recommendation priority and category", () => {
+    const recommendations = [
+      {
+        id: 1,
 
-          },
+        title: "Improve Occupancy",
 
-        ];
+        description: "Review vacant rooms.",
 
+        priority: "Medium",
 
+        category: "Occupancy",
 
-        render(
+        status: "Active",
+      },
+    ];
 
-          <SmartRecommendations
+    render(<SmartRecommendations recommendations={recommendations} />);
 
-            recommendations={
-              recommendations
-            }
+    expect(screen.getByText("Medium")).toBeInTheDocument();
 
-          />
+    expect(screen.getByText("Occupancy")).toBeInTheDocument();
+  });
 
-        );
+  it("should display multiple recommendations", () => {
+    const recommendations = [
+      {
+        id: 1,
 
+        title: "Payment Reminder",
 
+        description: "Notify overdue tenants.",
 
-        expect(
+        priority: "High",
 
-          screen.getByText(
-            "Smart Recommendations"
-          )
+        category: "Payment",
 
-        )
-        .toBeInTheDocument();
+        status: "Active",
+      },
 
+      {
+        id: 2,
 
+        title: "Vacancy Warning",
 
-        expect(
+        description: "Several rooms remain vacant.",
 
-          screen.getByText(
-            "Overdue Payments Detected"
-          )
+        priority: "Low",
 
-        )
-        .toBeInTheDocument();
+        category: "Occupancy",
 
+        status: "Active",
+      },
+    ];
 
+    render(<SmartRecommendations recommendations={recommendations} />);
 
-        expect(
+    expect(screen.getByText("Payment Reminder")).toBeInTheDocument();
 
-          screen.getByText(
-            "5 tenants have overdue balances."
-          )
+    expect(screen.getByText("Vacancy Warning")).toBeInTheDocument();
+  });
 
-        )
-        .toBeInTheDocument();
+  it("should display empty state when no recommendations exist", () => {
+    render(<SmartRecommendations recommendations={[]} />);
 
-
-
-        expect(
-
-          screen.getByText(
-            /Priority:/
-          )
-
-        )
-        .toHaveTextContent(
-          "High"
-        );
-
-
-
-        expect(
-
-          screen.getByText(
-            /Category:/
-          )
-
-        )
-        .toHaveTextContent(
-          "Payment"
-        );
-
-
-      }
-    );
-
-
-
-    it(
-      "should display multiple recommendations correctly",
-      () => {
-
-
-        const recommendations = [
-
-          {
-
-            id:
-              1,
-
-            title:
-              "Overdue Payments Detected",
-
-            message:
-              "5 tenants have overdue balances.",
-
-            priority:
-              "High",
-
-            category:
-              "Payment",
-
-          },
-
-
-          {
-
-            id:
-              2,
-
-            title:
-              "Improve Collection Rate",
-
-            message:
-              "Send payment reminders to pending accounts.",
-
-            priority:
-              "Medium",
-
-            category:
-              "Revenue",
-
-          },
-
-        ];
-
-
-
-        render(
-
-          <SmartRecommendations
-
-            recommendations={
-              recommendations
-            }
-
-          />
-
-        );
-
-
-
-        expect(
-
-          screen.getByText(
-            "Overdue Payments Detected"
-          )
-
-        )
-        .toBeInTheDocument();
-
-
-
-        expect(
-
-          screen.getByText(
-            "Improve Collection Rate"
-          )
-
-        )
-        .toBeInTheDocument();
-
-
-
-        expect(
-
-          screen.getByText(
-            "Send payment reminders to pending accounts."
-          )
-
-        )
-        .toBeInTheDocument();
-
-
-      }
-    );
-
-
-
-    it(
-      "should display unavailable message when recommendations are empty",
-      () => {
-
-
-        render(
-
-          <SmartRecommendations
-
-            recommendations={
-              []
-            }
-
-          />
-
-        );
-
-
-
-        expect(
-
-          screen.getByText(
-            "No recommendations available."
-          )
-
-        )
-        .toBeInTheDocument();
-
-
-      }
-    );
-
-
-
-    it(
-      "should display recommendation priority and category",
-      () => {
-
-
-        const recommendations = [
-
-          {
-
-            id:
-              1,
-
-            title:
-              "Monitor Occupancy",
-
-            message:
-              "Review vacant rooms to improve occupancy.",
-
-            priority:
-              "Low",
-
-            category:
-              "Occupancy",
-
-          },
-
-        ];
-
-
-
-        render(
-
-          <SmartRecommendations
-
-            recommendations={
-              recommendations
-            }
-
-          />
-
-        );
-
-
-
-        expect(
-
-          screen.getByText(
-            /Priority:/
-          )
-
-        )
-        .toHaveTextContent(
-          "Low"
-        );
-
-
-
-        expect(
-
-          screen.getByText(
-            /Category:/
-          )
-
-        )
-        .toHaveTextContent(
-          "Occupancy"
-        );
-
-
-      }
-    );
-
-
-  }
-);
+    expect(
+      screen.getByText("No recommendations available."),
+    ).toBeInTheDocument();
+  });
+});

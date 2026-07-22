@@ -4,6 +4,7 @@ import {
   fetchBillingInformation,
   updateBillingPaymentStatus,
   fetchBillingById,
+  saveUtilityBilling,
 } from "../service/billingService.js";
 
 /*
@@ -131,5 +132,14 @@ export const updateBillingStatus = async (req, res) => {
 
       message: error.message,
     });
+  }
+};
+
+export const updateUtilityBilling = async (req, res) => {
+  try {
+    const utility = await saveUtilityBilling(req.params.id, req.body);
+    return res.status(200).json({ success: true, message: "Utility billing saved.", data: utility });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
   }
 };

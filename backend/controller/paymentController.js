@@ -6,9 +6,11 @@ import {
   submitPayment,
 } from "../service/paymentService.js";
 
+import { refreshRiskAfterPaymentChange } from "../service/dssRefreshService.js";
+
 /*
 |--------------------------------------------------------------------------
-| Submit Tenant Payment
+| Submit Payment
 |--------------------------------------------------------------------------
 */
 
@@ -46,6 +48,8 @@ export const verifyPaymentStatus = async (req, res) => {
       req.body.verifiedBy,
     );
 
+    await refreshRiskAfterPaymentChange(result.tenant_id);
+
     return res.status(200).json({
       success: true,
 
@@ -75,6 +79,8 @@ export const rejectPaymentStatus = async (req, res) => {
 
       req.body.rejectedBy,
     );
+
+    await refreshRiskAfterPaymentChange(result.tenant_id);
 
     return res.status(200).json({
       success: true,
@@ -118,7 +124,7 @@ export const getTenantPayments = async (req, res) => {
 
 /*
 |--------------------------------------------------------------------------
-| Revenue Metrics
+| Payment Metrics
 |--------------------------------------------------------------------------
 */
 

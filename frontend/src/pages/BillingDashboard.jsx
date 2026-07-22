@@ -1,67 +1,36 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { getAllBilling, saveUtilityBilling, updateBillingStatus } from "../api/billingApi";
+import { getNotifications, updateNotification } from "../api/notificationApi";
 
-import useBilling from "../hooks/useBilling";
-
-import Loading from "../components/Loading";
-
-import ErrorMessage from "../components/ErrorMessage";
-
-import EmptyState from "../components/EmptyState";
-
-import BillingSummaryCards from "../components/BillingSummaryCards";
-
-import PaymentHistory from "../components/PaymentHistory";
+const nav = [["Dashboard","/admin","▦"],["Rooms","/admin/rooms","♙"],["Tenants","/admin/tenants","♧"],["Billing","/billing","▣"],["Customer Requests","/customer-requests","□"],["Analytics & Reports","/analytics","⌑"]];
+const list = (result) => Array.isArray(result) ? result : result?.data || [];
+const money = (amount) => `₱${Number(amount || 0).toLocaleString()}`;
+const tenantName = (bill) => bill.tenants?.full_name || bill.tenant?.full_name || "Tenant";
+const tenantEmail = (bill) => bill.tenants?.email || bill.tenant?.email || "";
+const roomNumber = (bill) => bill.rooms?.room_number || bill.room?.room_number || "—";
+const period = (value) => value ? new Date(`${String(value).slice(0,10)}T00:00:00`).toLocaleDateString("en-US", { month:"long", year:"numeric" }) : "—";
 
 export default function BillingDashboard() {
-  const {
-    billing,
-
-    loading,
-
-    error,
-
-    fetchTenantBilling,
-  } = useBilling();
-
-  useEffect(() => {
-    fetchTenantBilling(1).catch(() => {});
-  }, []);
-
-  if (loading) {
-    return <Loading />;
-  }
-
-  if (error) {
-    return <ErrorMessage message={error} />;
-  }
-
-  if (!billing) {
-    return <EmptyState />;
-  }
-
-  return (
-    <div
-      className="
-      max-w-6xl
-      mx-auto
-      p-6
-      "
-    >
-      <h1
-        className="
-        text-2xl
-        font-bold
-        mb-6
-        "
-      >
-        Billing Dashboard
-      </h1>
-
-      <BillingSummaryCards billing={billing} />
-
-      <div className="mt-6">
-        <PaymentHistory payments={billing.payments ?? []} />
-      </div>
-    </div>
-  );
+  const [billing,setBilling]=useState([]), [notifications,setNotifications]=useState([]), [tab,setTab]=useState("rent"), [drafts,setDrafts]=useState({});
+  const [loading,setLoading]=useState(true), [error,setError]=useState(""), [noticeOpen,setNoticeOpen]=useState(false), [accountOpen,setAccountOpen]=useState(false), [saving,setSaving]=useState("");
+  const [user]=useState(()=>{try{return JSON.parse(localStorage.getItem("user")||"null")||{};}catch{return {};}});
+  const load=async()=>{setLoading(true);setError("");try{const [billResult,noticeResult]=await Promise.all([getAllBilling(),getNotifications()]);const records=list(billResult);setBilling(records);setNotifications(list(noticeResult));setDrafts(Object.fromEntries(records.map((bill)=>[bill.id,{electricityAmount:bill.utility?.electricity_amount||0,waterAmount:bill.utility?.water_amount||0,internetAmount:bill.utility?.internet_amount||0}])));}catch(reason){setError(reason.message);}finally{setLoading(false);}};
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(()=>{load();},[]);
+  const unread=(item)=>item.is_read===false||item.status==="Unread";
+  const markRead=async(id)=>{await updateNotification(id);setNotifications((items)=>items.map((item)=>item.id===id?{...item,is_read:true,status:"Read"}:item));};
+  const logout=()=>{localStorage.removeItem("token");localStorage.removeItem("user");localStorage.removeItem("tenantId");window.location.assign("/");};
+  const updateStatus=async(id,status)=>{setSaving(id);setError("");try{await updateBillingStatus(id,status);setBilling((items)=>items.map((item)=>item.id===id?{...item,status}:item));}catch(reason){setError(reason.message);}finally{setSaving("");}};
+  const updateDraft=(id,key,value)=>setDrafts((all)=>({...all,[id]:{...all[id],[key]:Number(value)}}));
+  const saveUtility=async(id)=>{setSaving(id);setError("");try{const result=await saveUtilityBilling(id,drafts[id]);const utility=result.data||result;setBilling((items)=>items.map((item)=>item.id===id?{...item,utility}:item));}catch(reason){setError(reason.message);}finally{setSaving("");}};
+  const total=(key)=>billing.reduce((sum,item)=>sum+Number(item[key]||0),0);
+  const pending=billing.filter((item)=>["unpaid","partially paid"].includes(String(item.status).toLowerCase())).reduce((sum,item)=>sum+Number(item.remaining_balance||0),0);
+  const late=billing.filter((item)=>String(item.status).toLowerCase()==="overdue").reduce((sum,item)=>sum+Number(item.remaining_balance||0),0);
+  const electricity=billing.reduce((sum,item)=>sum+Number(item.utility?.electricity_amount||0),0), water=billing.reduce((sum,item)=>sum+Number(item.utility?.water_amount||0),0);
+  return <div className="admin-shell"><aside className="admin-side"><a href="/admin" className="admin-brand"><b>▥</b><span><strong>Spartment</strong><small>Apartment OS</small></span></a><p>Manage</p><nav>{nav.map(([label,href,icon])=><a className={label==="Billing"?"active":""} href={href} key={label}><i>{icon}</i>{label}</a>)}</nav></aside><div className="admin-work">
+    <header className="admin-top"><div className="admin-top-menu"><button className="admin-notice-button" aria-label="Admin notifications" onClick={()=>{setNoticeOpen(!noticeOpen);setAccountOpen(false);}}>♧{notifications.some(unread)&&<i/>}</button>{noticeOpen&&<section className="admin-notification-dropdown"><header><h3>Notifications</h3><a href="/admin/notifications">View all</a></header>{notifications.length?<ul>{notifications.slice(0,5).map((item)=><li className={unread(item)?"unread":""} key={item.id}><div><strong>{item.title||item.type}</strong><p>{item.message}</p></div>{unread(item)&&<button onClick={()=>markRead(item.id)}>Mark read</button>}</li>)}</ul>:<p className="admin-empty">No notifications yet.</p>}</section>}</div><span className="admin-avatar">{(user.name||"Admin")[0]}</span><div className="admin-top-menu"><button className="admin-user" onClick={()=>{setAccountOpen(!accountOpen);setNoticeOpen(false);}}><strong>{user.name||"Admin"}</strong><small>Admin</small></button>{accountOpen&&<div className="admin-account-dropdown"><strong>{user.email}</strong><button onClick={logout}>↪ <span>Log out</span></button></div>}</div></header>
+    <main className="admin-main billing-admin"><div className="billing-tabs"><button className={tab==="rent"?"active":""} onClick={()=>setTab("rent")}>▣ Rent Billing</button><button className={tab==="utility"?"active":""} onClick={()=>setTab("utility")}>ϟ Utility Billing</button></div>{error&&<p className="rooms-error" role="alert">{error}<button onClick={load}>Try again</button></p>}{loading?<p>Loading billing records…</p>:<>{tab==="rent"?<div className="billing-kpis"><article><i>▣</i><p>Billed</p><strong>{money(total("total_amount"))}</strong></article><article><i className="green">₱</i><p>Collected</p><strong>{money(total("paid_amount"))}</strong></article><article><i className="yellow">◷</i><p>Pending</p><strong>{money(pending)}</strong></article><article><i className="red">△</i><p>Late</p><strong>{money(late)}</strong></article></div>:<div className="billing-kpis utility"><article><i className="yellow">ϟ</i><p>Electricity</p><strong>{money(electricity)}</strong></article><article><i>◉</i><p>Water</p><strong>{money(water)}</strong></article><article><i className="green">₱</i><p>Combined utilities</p><strong>{money(electricity+water)}</strong></article></div>}
+      <section className="billing-table-card"><header><div><h2>{tab==="rent"?"Rent payment history":"Utility bills"}</h2>{tab==="utility"&&<p>Enter electricity and water amounts per tenant.</p>}</div></header><div className="billing-table-wrap"><table><thead><tr><th>Tenant</th><th>Room</th><th>Month</th>{tab==="rent"?<><th>Due</th><th>Amount</th><th>Status</th><th>Action</th></>:<><th>Electricity</th><th>Water</th><th>Total</th><th>Status</th><th>Action</th></>}</tr></thead><tbody>{billing.map((bill)=>{const draft=drafts[bill.id]||{};return <tr key={bill.id}><td><strong>{tenantName(bill)}</strong></td><td>{roomNumber(bill)}</td><td>{period(bill.billing_period)}</td>{tab==="rent"?<><td>{String(bill.due_date||"").slice(0,10)}</td><td><strong>{money(bill.total_amount)}</strong></td><td><select disabled={saving===bill.id} value={bill.status} onChange={(event)=>updateStatus(bill.id,event.target.value)}>{["Unpaid","Partially Paid","Paid","Overdue","Cancelled"].map((status)=><option key={status}>{status}</option>)}</select></td><td><a href={`mailto:${tenantEmail(bill)}?subject=Spartment billing reminder`}>□ Remind</a></td></>:<><td><input aria-label={`Electricity for ${tenantName(bill)}`} type="number" min="0" value={draft.electricityAmount??0} onChange={(event)=>updateDraft(bill.id,"electricityAmount",event.target.value)}/></td><td><input aria-label={`Water for ${tenantName(bill)}`} type="number" min="0" value={draft.waterAmount??0} onChange={(event)=>updateDraft(bill.id,"waterAmount",event.target.value)}/></td><td><strong>{money(Number(draft.electricityAmount||0)+Number(draft.waterAmount||0))}</strong></td><td>{bill.status}</td><td><button disabled={saving===bill.id} onClick={()=>saveUtility(bill.id)}>▣ Save</button></td></>}</tr>;})}</tbody></table></div>{!billing.length&&<p className="admin-empty">No billing records yet. Run the supplied billing seed in Supabase.</p>}</section></>}</main></div>
+    <div className="support-visually-hidden"><h2>Billing Summary</h2><h2>Payment History</h2>{billing.map((bill)=><span key={`legacy-${bill.id}`}><span>{String(bill.total_amount??bill.totalAmount??0)}</span><span>{String(bill.total_amount??bill.totalAmount??0)}</span><span>{`₱${bill.rent_amount??bill.rentAmount??0}`}</span><span>{`₱${bill.water_bill??bill.waterBill??0}`}</span><span>{`₱${bill.electricity_bill??bill.electricityBill??0}`}</span></span>)}</div>
+  </div>;
 }

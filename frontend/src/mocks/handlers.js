@@ -1,13 +1,15 @@
 import { http, HttpResponse } from "msw";
 
 export const handlers = [
+  http.get("http://localhost:5000/api/notifications", () => HttpResponse.json({ success: true, data: [] })),
+  http.get("http://localhost:5000/api/tenants", () => HttpResponse.json({ success: true, data: [] })),
   /*
 ==========================================
 ANALYTICS API
 ==========================================
 */
 
-  http.get("http://localhost:5000/analytics", () => {
+  http.get("http://localhost:5000/api/analytics", () => {
     return HttpResponse.json({
       totalRevenue: 80000,
 
@@ -200,6 +202,11 @@ POST /api/billing/generate
       });
     },
   ),
+
+  http.post("http://localhost:5000/api/billing", async ({ request }) => {
+    const body = await request.json();
+    return HttpResponse.json({ success: true, data: { id: 2, tenantId: body.tenantId, totalAmount: body.totalAmount, total_amount: body.totalAmount, status: "Unpaid" } });
+  }),
 
   /*
 UPDATE BILLING STATUS

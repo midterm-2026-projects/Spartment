@@ -1,163 +1,49 @@
-import { useEffect, useState } from "react";
-
-import { getTenantInformation } from "../api/tenantApi";
-
-import { useTenantRisk } from "../hooks/useRiskAnalysis";
-
-import TenantHeader from "../components/TenantHeader";
-import TenantInfoCards from "../components/TenantInfoCards";
+import TenantPortalNav from "../components/TenantPortalNav";
 import PaymentHistory from "../components/PaymentHistory";
-import RiskStatusCard from "../components/RiskStatusCard";
-import RiskIndicatorList from "../components/RiskIndicatorList";
 import Loading from "../components/Loading";
 import ErrorMessage from "../components/ErrorMessage";
-import EmptyState from "../components/EmptyState";
+import useTenantPortal from "../hooks/useTenantPortal";
+import { useTenantRisk } from "../hooks/useRiskAnalysis";
+import RiskStatusCard from "../components/RiskStatusCard";
+import RiskIndicatorList from "../components/RiskIndicatorList";
 
-function getStoredTenantId() {
-  const directTenantId = localStorage.getItem("tenantId");
+const money = (value) => `₱${Number(value || 0).toLocaleString()}`;
+const billMoney = (value) => `₱${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 
-  if (directTenantId) {
-    return directTenantId;
-  }
+export default function TenantDashboard({ tenantId }) {
+  const { data, loading, error } = useTenantPortal(tenantId);
+  const { risk, loading: riskLoading } = useTenantRisk(tenantId);
+  if (loading) return <Loading />;
+  if (error) return <ErrorMessage message={error} />;
+  const tenant = data?.tenant || {};
+  const room = data?.room || {};
+  const billing = data?.billing || {};
+  const payments = data?.payments || [];
+  const name = tenant.fullName || tenant.full_name || tenant.name || "Tenant";
+  const roomNumber = room.roomNumber || room.room_number || tenant.roomNumber || "Not assigned";
+  const rent = room.monthlyRent ?? room.monthly_rent ?? billing.rentAmount ?? billing.rent_amount ?? 0;
+  const due = billing.dueDate || billing.due_date || billing.nextDue || "No current bill";
+  const total = billing.totalAmount ?? billing.total_amount ?? rent;
+  const status = billing.status || "Pending";
 
-  const storedUser = localStorage.getItem("user");
-
-  if (!storedUser) {
-    return "";
-  }
-
-  try {
-    const user = JSON.parse(storedUser);
-
-    return user.tenantId || user.tenant_id || user.tenant?.id || "";
-  } catch {
-    return "";
-  }
-}
-
-function normalizeTenantResponse(response) {
-  const data = response?.data || response || {};
-
-  return {
-    tenant: data.tenant || data.tenantData || data,
-
-    room: data.room || data.tenant?.room || null,
-
-    billing:
-      data.billing || data.currentBilling || data.current_billing || null,
-
-    payments:
-      data.payments || data.paymentHistory || data.payment_history || [],
-  };
-}
-
-export default function TenantDashboard({ tenantId: providedTenantId }) {
-  const tenantId = providedTenantId || getStoredTenantId();
-
-  const [tenantData, setTenantData] = useState(null);
-
-  const [loading, setLoading] = useState(true);
-
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadTenant() {
-      if (!tenantId) {
-        if (active) {
-          setError("Tenant ID was not found. Please log in again.");
-
-          setLoading(false);
-        }
-
-        return;
-      }
-
-      try {
-        setLoading(true);
-
-        setError("");
-
-        const response = await getTenantInformation(tenantId);
-
-        if (active) {
-          setTenantData(normalizeTenantResponse(response));
-        }
-      } catch (error) {
-        if (active) {
-          setError(error.message);
-        }
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
-      }
-    }
-
-    loadTenant();
-
-    return () => {
-      active = false;
-    };
-  }, [tenantId]);
-
-  const resolvedTenantId =
-    tenantData?.tenant?.id ||
-    tenantData?.tenant?.tenantId ||
-    tenantData?.tenant?.tenant_id ||
-    tenantId;
-
-  const {
-    risk,
-    loading: riskLoading,
-    error: riskError,
-  } = useTenantRisk(resolvedTenantId);
-
-  if (loading) {
-    return <Loading />;
-  }
-
-  if (error) {
-    return <ErrorMessage message={error} />;
-  }
-
-  if (!tenantData?.tenant) {
-    return <EmptyState />;
-  }
-
-  return (
-    <main className="mx-auto max-w-6xl p-6">
-      <TenantHeader tenant={tenantData.tenant} />
-
-      <TenantInfoCards
-        tenant={tenantData.tenant}
-        room={tenantData.room}
-        billing={tenantData.billing}
-        risk={risk}
-      />
-
-      {riskError ? (
-        <div className="mb-5">
-          <ErrorMessage message={riskError} />
-        </div>
-      ) : null}
-
-      <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2">
-        {riskLoading ? (
-          <div className="rounded-xl border bg-white p-5">
-            <p className="text-gray-500">Loading risk analysis...</p>
-          </div>
-        ) : (
-          <RiskStatusCard risk={risk} />
-        )}
-
-        <RiskIndicatorList indicators={risk?.indicators || []} />
-      </div>
-
-      <div className="mt-6">
-        <PaymentHistory payments={tenantData.payments || []} />
-      </div>
+  return <div className="tenant-portal">
+    <TenantPortalNav tenant={tenant} active="dashboard" />
+    <main className="tenant-main">
+      <section className="tenant-welcome"><h1>Hello, {name.split(" ")[0]} <span>👋</span></h1><p>Here&apos;s a snapshot of your apartment.</p></section>
+      <section className="tenant-summary">
+        <article><i className="blue">⌂</i><p>My Room</p><strong>{roomNumber}</strong></article>
+        <article><i className="green">▣</i><p>Monthly Rent</p><strong>{money(rent)}</strong></article>
+        <article><i className="yellow">□</i><p>Next Due</p><strong>{due}</strong></article>
+      </section>
+      <section className="tenant-card tenant-profile-summary"><h2>Tenant information</h2><p><span>Email</span><strong>{tenant.email || "Not provided"}</strong></p><p><span>Contact</span><strong>{tenant.contact || tenant.phone || "Not provided"}</strong></p></section>
+      <section className="current-bill tenant-card">
+        <div><h2>Current bill</h2><small>{billing.period || "Latest statement"}</small></div>
+        <span className={`tenant-status ${status.toLowerCase()}`}>● {status}</span>
+        <div className="current-bill__amount"><p>Amount due<strong>{billMoney(total)}</strong></p><p>Due date<strong>{`Due ${due}`}</strong></p></div>
+        <p className="tenant-tip">💡 Payments are processed offline. Please coordinate with the building admin.</p>
+      </section>
+      <section className="tenant-card tenant-history"><PaymentHistory payments={payments} /></section>
+      {riskLoading ? <p>Loading risk analysis…</p> : risk ? <section className="tenant-risk"><h2>{risk.riskLevel || risk.risk_level}</h2><RiskStatusCard risk={risk} /><RiskIndicatorList indicators={risk.indicators || []} /></section> : null}
     </main>
-  );
+  </div>;
 }

@@ -1,180 +1,69 @@
 import {
   analyzeTenantRisk,
   getHighRiskTenants,
+  generateRiskAssessment,
 } from "../service/riskService.js";
 
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| Analyze Tenant Risk
-|--------------------------------------------------------------------------
-|
-| Retrieves tenant payment history,
-| analyzes late payments,
-| checks unpaid balances,
-| generates risk level and indicators.
-|
-| Example:
-|
-| GET /api/risk/tenant/:tenantId
-|
-|--------------------------------------------------------------------------
-*/
-
-
-export const analyzeTenantRiskController = async (
-  req,
-  res
-) => {
-
-
+export const analyzeTenantRiskController = async (req, res) => {
   try {
+    const { tenantId } = req.params;
 
-
-    const {
-      tenantId
-    } = req.params;
-
-
-
-    if(!tenantId){
-
-
+    if (!tenantId) {
       return res.status(400).json({
-
-        message:
-          "Tenant ID is required."
-
+        message: "Tenant ID is required.",
       });
-
-
     }
 
-
-
-
-    const risk =
-
-      await analyzeTenantRisk(
-
-        tenantId
-
-      );
-
-
-
-
+    const risk = await analyzeTenantRisk(tenantId);
 
     return res.status(200).json({
+      success: true,
 
-
-      message:
-        "Tenant risk analysis completed successfully.",
-
-
-      data:
-        risk
-
-
-
+      data: risk,
     });
-
-
-
-
-
-  } catch(error){
-
-
-
+  } catch (error) {
     return res.status(500).json({
+      success: false,
 
-
-      message:
-        error.message
-
-
+      message: error.message,
     });
-
-
   }
-
-
 };
 
-
-
-
-
-
-
-
-
-/*
-|--------------------------------------------------------------------------
-| Get High Risk Tenants
-|--------------------------------------------------------------------------
-|
-| Returns tenants classified as High Risk.
-|
-| Example:
-|
-| GET /api/risk/high-risk
-|
-|--------------------------------------------------------------------------
-*/
-
-
-export const getHighRiskTenantList = async (
-  req,
-  res
-) => {
-
-
+export const generateRiskController = async (req, res) => {
   try {
+    const result = await generateRiskAssessment();
 
+    return res.status(201).json({
+      success: true,
 
-    const tenants =
+      message: "Risk assessments generated successfully.",
 
-      await getHighRiskTenants();
+      data: result,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
 
+      message: error.message,
+    });
+  }
+};
 
-
+export const getHighRiskTenantList = async (req, res) => {
+  try {
+    const tenants = await getHighRiskTenants();
 
     return res.status(200).json({
+      success: true,
 
-
-      message:
-        "High-risk tenants retrieved successfully.",
-
-
-      data:
-        tenants
-
-
-
+      data: tenants,
     });
-
-
-
-
-  } catch(error){
-
-
+  } catch (error) {
     return res.status(500).json({
+      success: false,
 
-
-      message:
-        error.message
-
-
+      message: error.message,
     });
-
-
   }
-
-
 };
